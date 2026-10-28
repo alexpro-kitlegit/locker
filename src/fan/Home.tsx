@@ -6,12 +6,13 @@ import { getClub, PARTNER_CLUBS } from "../data/clubs";
 import { DraftRow, hasContent } from "./Sell";
 import { firstName } from "../lib/format";
 import { useLocker } from "../lib/store";
+import { isVisible } from "../lib/reputation";
 
 export function Home() {
   const s = useLocker();
   const me = s.users[s.meId];
   const myClub = getClub(me.clubId)!;
-  const live = s.listings.filter((l) => l.status === "live" && l.sellerId !== s.meId);
+  const live = s.listings.filter((l) => isVisible(s, l) && l.sellerId !== s.meId);
   const fromMyClub = live.filter((l) => l.clubId === myClub.id);
   const drafts = s.drafts.filter((d) => d.ownerId === s.meId && hasContent(d));
   const newest = [...live].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 6);

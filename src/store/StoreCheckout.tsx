@@ -2,6 +2,7 @@ import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { CheckoutForm } from "../components/CheckoutForm";
 import { Button, LockerLogo } from "../components/ui";
 import { useLocker } from "../lib/store";
+import type { Listing } from "../lib/types";
 import { useStore } from "./StoreLayout";
 
 export function StoreCheckout() {
@@ -9,8 +10,9 @@ export function StoreCheckout() {
   const { club, user, requireSignIn } = useStore();
   const s = useLocker();
   const navigate = useNavigate();
-  const listing = s.listings.find((l) => l.id === id);
-  if (!listing) return null;
+  const listings = (id ?? "").split(",").map((x) => s.listings.find((l) => l.id === x)).filter((l) => l && l.status === "live") as Listing[];
+  if (listings.length === 0) return <p className="px-4 py-16 text-center text-neutral-500">This shirt isn't available any more.</p>;
+  const listing = listings[0];
   if (user && listing.sellerId === user.id) return <Navigate to={`/store/${club.id}/item/${listing.id}`} replace />;
 
   if (!user)
@@ -28,7 +30,7 @@ export function StoreCheckout() {
     <div className="mx-auto max-w-lg px-4 py-6 sm:px-6">
       <h1 className="mb-4 text-2xl font-bold">Checkout</h1>
       <CheckoutForm
-        listing={listing}
+        listings={listings}
         buyerId={user.id}
         channel="club"
         clubId={club.id}

@@ -30,7 +30,12 @@ The seller journey as agreed, then everything else it depends on: missing steps,
 | Minimum price | **None** |
 | Listing text | Blocked words: listings containing them can't be submitted (name/number, description) |
 | Offers | Yes, like Vinted: buyer makes an offer; seller accepts, declines or counters |
-| Messages (pre-sale questions) | Open, see the recommendation below |
+| Messages (pre-sale questions) | **Yes**: one thread per listing and buyer, offers inside it, AI guardrails |
+| KitLegit-app checks | A shirt already checked (authentic) in the KitLegit app can be listed in The Locker **without a new check**. Needs KitLegit to expose a user's checks to The Locker |
+| Re-listing a shirt bought on The Locker | Allowed, but it **is checked again** (unlike a KitLegit-app check) |
+| Expert review of a rejected listing | Paid (placeholder £4.99). If the expert says authentic, the listing goes live |
+| Minimum move out of the wallet | **£5** (to the bank or club credit) |
+| Listing management, notifications, reputation, seller cancellations (like Vinted), tax visibility, bundles | Yes, all in the prototype (v0.5) |
 
 ### Recommendation on messages
 
@@ -139,3 +144,28 @@ Allow them, in the Vinted model where the conversation and offers live in one th
 - **Online Safety Act:** chat makes us a user-to-user service. Illegal-content risk assessment and children's access assessment within 3 months of launch, reporting tools, and a minimum age (likely 18 for selling, given payouts).
 - **IP:** club crests and names in white-label stores are covered by the partner agreement. For non-partner clubs, use the name as a description only, no crest.
 - **Carrier and ShipStation terms:** labels for private sellers, prohibited items.
+
+## Disputes: what the seller side needs
+
+Disputes can only start inside the 48-hour window, so the money is always still held when one opens.
+
+1. **Opening:** the buyer reports a problem (not received, damaged, not as described, wrong shirt, "it's fake") with photos. The money stays held, and the seller is notified.
+2. **Seller's reply window** (e.g. 48 hours), with three choices:
+   - accept and refund;
+   - reply with their side (photos, a message);
+   - offer a partial refund (the buyer keeps the shirt).
+   No reply means the buyer is refunded.
+3. **Evidence collected automatically:** the listing photos and the KitLegit check, the FanNFC tag (if any), the chat, and every tracking event (drop-off, delivered scan).
+4. **A person decides** (ops admin + Help Scout). The outcomes:
+   - **Full refund with return:** the buyer gets a prepaid return label, and the money goes back once the shirt is scanned at drop-off.
+   - **Partial refund.**
+   - **Claim rejected:** the money is released to the seller.
+5. **"It's fake" and "wrong shirt" claims:** the returned shirt is re-checked by KitLegit, and matched by NFC tag or photos to the certificate. If it is the certified shirt, the claim is rejected. If it isn't, it's a seller fraud case (account hold, Back Four).
+6. **Who pays return postage:** the seller when the claim is upheld, the buyer otherwise. Lost parcels: carrier claim first, then the protection pot, and the seller is still paid.
+7. **After the 48 hours** (the order is complete): no disputes. Anything else goes through support and the protection pot.
+8. **Effects:**
+   - Upheld disputes show on the seller's profile, and repeated ones lead to a hold.
+   - Buyers with many rejected claims get flagged.
+   - Both sides get notifications at each step.
+
+Not built in the prototype yet: the seller's reply screen, return labels, the ops review queue.

@@ -48,8 +48,36 @@ export interface User {
   /** Favourite club, picked at sign-up. */
   clubId: string;
   city: string;
-  rating: number;
+  /** Sales before the prototype's own orders (for reputation). */
   sales: number;
+  joinedAt: string;
+  seller: SellerProfile;
+}
+
+/** Everything collected at seller onboarding, plus selling settings and account state. */
+export interface SellerProfile {
+  /** "verified" once Stripe has checked ID and bank. Selling needs it. */
+  status: "none" | "verified";
+  type?: "private" | "business";
+  businessName?: string;
+  dob?: string;
+  address?: { line1: string; city: string; postcode: string };
+  /** NI number (private) or UTR (business), for HMRC reporting. Stored masked. */
+  taxId?: string;
+  bankLast4?: string;
+  termsAcceptedAt?: string;
+  /** Hides carriers that need a printed label (DPD) from buyers. */
+  noPrinter?: boolean;
+  /** Holiday mode: listings are hidden until it's turned off. */
+  holiday?: boolean;
+  /** Bundle discount for 2+ shirts from this seller, in percent. */
+  bundleDiscount: number;
+  /** Failed KitLegit checks in a row. 3 puts the account on hold. */
+  failedStreak: number;
+  onHold?: boolean;
+  /** HMRC reporting thresholds are per calendar year. Prototype stand-in for this year's totals before the demo. */
+  taxYear: { sales: number; earnings: number };
+  fastDispatch?: boolean;
 }
 
 /** KitLegit's named photo slots (kitlegit-web src/lib/checkTypes.ts). */
@@ -90,8 +118,11 @@ export interface KitLegitCheck {
   checkedAt: string;
 }
 
-/** in_review: the KitLegit check is running in the background. The seller is just told it's being prepared. */
-export type ListingStatus = "in_review" | "live" | "rejected" | "sold" | "withdrawn";
+/**
+ * in_review: the KitLegit check is running in the background (the seller is just told it's being prepared).
+ * expert_review: a rejected listing the seller paid to have checked by hand.
+ */
+export type ListingStatus = "in_review" | "live" | "rejected" | "expert_review" | "sold" | "withdrawn";
 
 export interface Listing {
   id: string;
@@ -116,6 +147,29 @@ export interface Listing {
   nfcTag?: string;
   printing?: string;
   description?: string;
+  /** Re-listed after being bought on The Locker (the original listing). */
+  relistedFrom?: string;
+  /** "kitlegit": listed from a check the seller already did in the KitLegit app (no new check). */
+  source?: "check" | "kitlegit";
+  /** Set when the price is lowered after listing. */
+  previousPrice?: number;
+  /** An accepted offer holds the shirt for that buyer at that price for 24 hours. */
+  reservedFor?: { buyerId: string; price: number; until: string };
+  expertReview?: { fee: number; requestedAt: string; dueAt: string; outcome?: "authentic" | "counterfeit" };
+}
+
+/** A check the fan did in the KitLegit app. Authentic ones can be listed in The Locker without a new check. */
+export interface KitLegitRecord {
+  id: string;
+  userId: string;
+  certificate: string;
+  clubId: string;
+  type: ShirtType;
+  season: string;
+  condition: Condition;
+  verdict: "authentic" | "counterfeit";
+  checkedAt: string;
+  listingId?: string;
 }
 
 /** KitLegit's check steps plus The Locker's price step. Processing is transient and not saved. */
@@ -154,12 +208,16 @@ export interface Draft {
   securityCode?: string;
   details: ListingDetails;
   price?: number;
+  /** Listing a check from the KitLegit app: skips photos and the check. */
+  fromKitLegit?: string;
+  /** Re-listing a shirt bought on The Locker: it's checked again. */
+  relistOf?: string;
   updatedAt: string;
 }
 
 /** completed: 48 hours after delivery with no problem reported (or the buyer said it's all good). Money is released. */
-export type OrderStatus = "paid" | "dispatched" | "in_transit" | "delivered" | "completed";
-export type Carrier = "inpost" | "evri" | "royal_mail";
+export type OrderStatus = "paid" | "dispatched" | "in_transit" | "delivered" | "completed" | "cancelled";
+export type Carrier = "inpost" | "evri" | "royal_mail" | "dpd";
 export type PaymentMethod = "pay_by_bank" | "card" | "apple_pay" | "locker_balance";
 export type PayoutMethod = "club_credit" | "locker_balance" | "bank";
 
@@ -178,7 +236,11 @@ export interface Payout {
 
 export interface Order {
   id: string;
+  /** The first shirt. Bundles add the rest in extraListingIds. */
   listingId: string;
+  extraListingIds?: string[];
+  /** Bundle discount applied, in percent. */
+  bundleDiscount?: number;
   buyerId: string;
   sellerId: string;
   /** Where the buyer bought it: The Locker app, or a club's store. */
@@ -195,7 +257,84 @@ export interface Order {
   events: OrderEvent[];
   tracking?: string;
   payout?: Payout;
+  /** Prototype stand-in for days passing since payment (dispatch reminders and the deadline). */
+  dispatchReminders?: number;
+  cancellation?: { by: "seller" | "deadline"; reason: string; at: string };
   createdAt: string;
+}
+
+export type NotificationKind =
+  | "listing_live"
+  | "listing_rejected"
+  | "expert_result"
+  | "account_hold"
+  | "sold"
+  | "send_reminder"
+  | "cancelled"
+  | "dispatched"
+  | "delivered"
+  | "completed"
+  | "money_in"
+  | "auto_transfer"
+  | "message"
+  | "offer"
+  | "review"
+  | "tax";
+
+/** Where a notification leads. Each surface turns it into its own route. */
+export interface NotificationLink {
+  to: "listing" | "order" | "label" | "wallet" | "payout" | "conversation" | "sell" | "profile" | "account";
+  id?: string;
+}
+
+export interface Notification {
+  id: string;
+  userId: string;
+  kind: NotificationKind;
+  title: string;
+  body?: string;
+  link?: NotificationLink;
+  at: string;
+  read: boolean;
+}
+
+/** A thread between a buyer and a seller about one listing. Questions and offers live together, as on Vinted. */
+export interface Conversation {
+  id: string;
+  listingId: string;
+  buyerId: string;
+  sellerId: string;
+  messages: Message[];
+  /** The live offer, if any. */
+  offer?: Offer;
+  updatedAt: string;
+}
+
+export interface Message {
+  id: string;
+  from: string;
+  at: string;
+  kind: "text" | "offer" | "system";
+  text?: string;
+  amount?: number;
+}
+
+export interface Offer {
+  amount: number;
+  /** Who made the current offer (buyer, or seller when countering). */
+  by: string;
+  status: "pending" | "accepted" | "declined";
+  expiresAt: string;
+}
+
+export interface Review {
+  id: string;
+  orderId: string;
+  from: string;
+  to: string;
+  stars: number;
+  text: string;
+  at: string;
 }
 
 /**
@@ -254,7 +393,10 @@ export interface LockerState {
   orders: Order[];
   wallet: WalletEntry[];
   walletMoves: WalletMove[];
-  /** Club credit codes. The owner is the seller on the linked order. */
   credits: ClubCredit[];
-  demo: { nextVerdict: "authentic" | "counterfeit"; unsureId: boolean };
+  notifications: Notification[];
+  conversations: Conversation[];
+  reviews: Review[];
+  kitlegit: KitLegitRecord[];
+  demo: { nextVerdict: "authentic" | "counterfeit"; unsureId: boolean; expertVerdict: "authentic" | "counterfeit" };
 }

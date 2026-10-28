@@ -2,7 +2,9 @@ import { ShieldCheck } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { ShirtTile } from "../components/ListingCard";
 import { OrderTimeline } from "../components/OrderTimeline";
-import { LockerLogo, TickCircle } from "../components/ui";
+import { Button, LockerLogo, TickCircle } from "../components/ui";
+import { ReviewPrompt } from "../components/seller";
+import { confirmReceived } from "../lib/actions";
 import { firstName, sendBy, shirtTitle } from "../lib/format";
 import { CARRIERS, formatGBP } from "../lib/pricing";
 import { useLocker } from "../lib/store";
@@ -56,6 +58,22 @@ export function StoreOrder() {
             : `We hold your money until it arrives. Then KitLegit certificate ${listing.check.certificate} moves to you.`}
         </p>
       </div>
+
+      {order.status === "delivered" && (
+        <div className="space-y-2 rounded-2xl bg-accent/5 p-4 text-sm">
+          <p className="font-semibold">Is everything OK?</p>
+          <p className="text-neutral-600">You have 48 hours to report a problem. After that, {firstName(seller.name)} is paid.</p>
+          <Button block onClick={() => confirmReceived(order.id)}>
+            Yes, all good
+          </Button>
+        </div>
+      )}
+      {order.status === "cancelled" && (
+        <p className="rounded-2xl bg-neutral-100 p-4 text-sm">
+          <span className="font-semibold">Cancelled.</span> You've been refunded {formatGBP(order.total)}.
+        </p>
+      )}
+      {order.status === "completed" && <ReviewPrompt orderId={order.id} from={buyer.id} to={seller.id} />}
 
       <div className="rounded-2xl bg-neutral-50 p-4 text-center text-sm">
         <p>

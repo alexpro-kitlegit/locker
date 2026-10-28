@@ -1,55 +1,26 @@
-import { ChevronRight, Plus } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { useEffect } from "react";
-import { Link, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import { SellStart } from "../components/sell/SellStart";
+import { appRoutes } from "../lib/routes";
 import { SellFlow } from "../components/sell/SellFlow";
-import { Button, SectionTitle } from "../components/ui";
 import { getClub } from "../data/clubs";
 import { blockers } from "../components/sell/flow";
 import { PhotoView } from "../components/sell/PhotoGuide";
 import { kitFor } from "../components/sell/UploadStep";
-import { createDraft, setAppUser } from "../lib/actions";
+import { setAppUser } from "../lib/actions";
 import { formatDate } from "../lib/format";
-import { getState, useLocker } from "../lib/store";
+import { useLocker } from "../lib/store";
 import type { Draft } from "../lib/types";
 
-/** Sell tab: carry on a draft (maybe started on a club's website), or start a new listing. */
+/** Sell tab: onboarding first if needed, then drafts, a new shirt, KitLegit-app checks or re-listing. */
 export function Sell() {
   const s = useLocker();
-  const navigate = useNavigate();
-  const { key } = useLocation();
-  const drafts = s.drafts.filter((d) => d.ownerId === s.meId && hasContent(d));
-
-  const start = () => {
-    // Read fresh state: StrictMode runs the auto-start effect twice, and we want one draft.
-    const st = getState();
-    const empty = st.drafts.find((d) => d.ownerId === st.meId && !hasContent(d));
-    const id = empty?.id ?? createDraft(st.meId, { surface: "app" });
-    navigate(`/app/sell/${id}`);
-  };
-
-  if (drafts.length === 0) return <StartNew key={key} start={start} />;
-
   return (
-    <div className="space-y-5 px-4 pb-6 pt-1">
-      <h1 className="text-2xl font-bold tracking-tight">Sell a shirt</h1>
-      <section>
-        <SectionTitle>Carry on where you left off</SectionTitle>
-        <div className="space-y-2">
-          {drafts.map((d) => (
-            <DraftRow key={d.id} draft={d} to={`/app/sell/${d.id}`} />
-          ))}
-        </div>
-      </section>
-      <Button block variant="secondary" onClick={start}>
-        <Plus className="h-4 w-4" /> Start a new listing
-      </Button>
+    <div className="px-4 pb-6 pt-1">
+      <SellStart userId={s.meId} routes={appRoutes} startedOn={{ surface: "app" }} draftHref={(id) => `/app/sell/${id}`} />
     </div>
   );
-}
-
-function StartNew({ start }: { start: () => void }) {
-  useEffect(start, []);
-  return null;
 }
 
 export function SellDraft() {

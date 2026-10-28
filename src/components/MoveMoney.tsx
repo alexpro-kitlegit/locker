@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { getClub } from "../data/clubs";
 import { moveMoney } from "../lib/actions";
-import { formatGBP, payoutAmount } from "../lib/pricing";
+import { formatGBP, MIN_MOVE, payoutAmount } from "../lib/pricing";
 import { useLocker } from "../lib/store";
 import type { WalletMove } from "../lib/types";
 import { AUTO_TRANSFER_DAYS, creditCaps, formatDay, walletBalance, walletEntries } from "../lib/wallet";
@@ -49,7 +49,7 @@ export function MoveMoney({ userId, doneHref, doneLabel }: { userId: string; don
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Move money</h1>
         <p className="text-sm text-neutral-500">
-          {formatGBP(balance)} in your wallet. Move all of it or some of it, and do it again to split the rest.
+          {formatGBP(balance)} in your wallet. Move all of it or some of it ({formatGBP(MIN_MOVE)} minimum), and do it again to split the rest.
         </p>
       </div>
 
@@ -134,7 +134,8 @@ export function MoveMoney({ userId, doneHref, doneLabel }: { userId: string; don
             </p>
           </div>
 
-          <Button block disabled={amount <= 0} onClick={confirm}>
+          {amount > 0 && amount < MIN_MOVE && <p className="text-xs font-medium text-red-600">The minimum is {formatGBP(MIN_MOVE)}.</p>}
+          <Button block disabled={amount < MIN_MOVE} onClick={confirm}>
             Move {formatGBP(Math.max(amount, 0))}
           </Button>
         </>

@@ -3,7 +3,8 @@ import { Apple, CreditCard, Landmark, Loader2, Lock, MapPin, Wallet } from "luci
 import { useState, type ReactNode } from "react";
 import { placeOrder } from "../lib/actions";
 import { shirtTitle } from "../lib/format";
-import { buyerFee, CARRIERS, formatGBP } from "../lib/pricing";
+import { buyerFee, CARRIERS, formatGBP, PRINT_ONLY } from "../lib/pricing";
+import { priceFor } from "../lib/reputation";
 import { useLocker } from "../lib/store";
 import { walletBalance } from "../lib/wallet";
 import type { Carrier, Listing, Order, PaymentMethod } from "../lib/types";
@@ -14,39 +15,50 @@ const DROP_OFF: Record<Carrier, string> = {
   inpost: "InPost Locker · Tesco Extra, Harbour Rd",
   evri: "Evri ParcelShop · Costcutter, Mill Lane",
   royal_mail: "Home delivery · 14 Alder Close",
+  dpd: "DPD Pickup · Spar, Station Rd",
 };
 
-/** Shared checkout for The Locker app and club stores. The accent colour comes from the surface. */
+/**
+ * Shared checkout for The Locker app and club stores (the accent colour comes from the surface). Takes one shirt,
+ * or a bundle of shirts from one seller with the seller's bundle discount. An accepted offer sets the price.
+ */
 export function CheckoutForm({
-  listing,
+  listings,
   buyerId,
   channel,
   clubId,
   header,
   onPlaced,
 }: {
-  listing: Listing;
+  listings: Listing[];
   buyerId: string;
   channel: Order["channel"];
   clubId?: string;
   header?: ReactNode;
   onPlaced: (orderId: string) => void;
 }) {
-  const lockerBalance = walletBalance(useLocker(), buyerId);
+  const s = useLocker();
+  const lockerBalance = walletBalance(s, buyerId);
+  const seller = s.users[listings[0].sellerId];
+  const carriers = (Object.keys(CARRIERS) as Carrier[]).filter((c) => !(seller.seller.noPrinter && PRINT_ONLY.includes(c)));
   const [carrier, setCarrier] = useState<Carrier>("inpost");
   const [payment, setPayment] = useState<PaymentMethod>("pay_by_bank");
   const [paying, setPaying] = useState(false);
 
-  const fee = buyerFee(listing.price);
+  const listPrice = listings.reduce((a, l) => a + priceFor(l, buyerId), 0);
+  const discount = listings.length > 1 ? seller.seller.bundleDiscount : 0;
+  const itemPrice = Math.round(listPrice * (1 - discount / 100));
+  const offer = listings.length === 1 && priceFor(listings[0], buyerId) !== listings[0].price;
+  const fee = buyerFee(itemPrice);
   const postage = CARRIERS[carrier].price;
-  const total = listing.price + fee + postage;
+  const total = itemPrice + fee + postage;
   const canUseBalance = channel === "app" && lockerBalance >= total;
 
   const pay = () => {
     setPaying(true);
     // Stands in for Stripe (Pay by Bank / card / Apple Pay) and the redirect back.
     setTimeout(() => {
-      const id = placeOrder({ listingId: listing.id, buyerId, channel, clubId, paymentMethod: payment, carrier, dropOff: DROP_OFF[carrier] });
+      const id = placeOrder({ listingIds: listings.map((l) => l.id), buyerId, channel, clubId, paymentMethod: payment, carrier, dropOff: DROP_OFF[carrier] });
       onPlaced(id);
     }, 1400);
   };
@@ -67,19 +79,27 @@ export function CheckoutForm({
   return (
     <div className="space-y-5">
       {header}
-      <div className="flex gap-3 rounded-2xl border border-neutral-200 p-3">
-        <ShirtTile listing={listing} compact className="w-20 shrink-0" />
-        <div className="min-w-0 space-y-1">
-          <p className="font-semibold">
-            {shirtTitle(listing)} · {listing.size}
-          </p>
-          <p className="text-xs text-neutral-500">{listing.condition}</p>
-          <CheckedBadge />
+      {listings.length > 1 && (
+        <p className="rounded-2xl bg-accent/5 p-3 text-sm">
+          <span className="font-semibold">Bundle of {listings.length} from {seller.name.split(" ")[0]}.</span> One parcel, one postage
+          {discount > 0 ? `, and ${discount}% off the shirts` : ""}.
+        </p>
+      )}
+      {listings.map((listing) => (
+        <div key={listing.id} className="flex gap-3 rounded-2xl border border-neutral-200 p-3">
+          <ShirtTile listing={listing} compact className="w-20 shrink-0" />
+          <div className="min-w-0 space-y-1">
+            <p className="font-semibold">
+              {shirtTitle(listing)} · {listing.size}
+            </p>
+            <p className="text-xs text-neutral-500">{listing.condition}</p>
+            <CheckedBadge />
+          </div>
         </div>
-      </div>
+      ))}
 
       <Section title="Delivery">
-        {(Object.keys(CARRIERS) as Carrier[]).map((c) => (
+        {carriers.map((c) => (
           <Choice key={c} selected={carrier === c} onClick={() => setCarrier(c)}>
             <div className="flex-1">
               <p className="text-sm font-semibold">{CARRIERS[c].name}</p>
@@ -120,7 +140,8 @@ export function CheckoutForm({
 
       <Section title="Summary">
         <div className="rounded-2xl bg-neutral-50 p-3 text-sm">
-          <Line label="Shirt" value={formatGBP(listing.price)} />
+          <Line label={listings.length > 1 ? `${listings.length} shirts` : offer ? "Shirt (your accepted offer)" : "Shirt"} value={formatGBP(listPrice)} />
+          {discount > 0 && <Line label={`Bundle discount (${discount}%)`} value={`−${formatGBP(listPrice - itemPrice)}`} />}
           <Line label="Buyer protection" value={formatGBP(fee)} />
           <Line label={`Postage (${CARRIERS[carrier].name})`} value={formatGBP(postage)} />
           <div className="mt-2 flex justify-between border-t border-neutral-200 pt-2 text-base font-bold">

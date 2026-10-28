@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { ArrowLeft, ArrowRight, Check, Loader2, Nfc, Sparkles, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Loader2, Nfc, ShieldCheck, Sparkles, X } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getClub, PARTNER_CLUBS } from "../../data/clubs";
@@ -125,7 +125,10 @@ export function SellFlow({
     );
 
   // ---- Top bar: KitLegit's step circles, Back and the primary button -------------------------
-  const stepIndex = BAR_STEPS.indexOf(draft.step);
+  // A shirt already checked in the KitLegit app skips photos and the check: just details and price.
+  const barSteps: DraftStep[] = draft.fromKitLegit ? ["confirm", "price"] : BAR_STEPS;
+  const record = draft.fromKitLegit ? s.kitlegit.find((r) => r.id === draft.fromKitLegit) : undefined;
+  const stepIndex = barSteps.indexOf(draft.step);
   const go = (step: DraftStep) => patchDraft(draft.id, () => ({ step }));
   const bar = {
     upload: { label: "Analyse Photos", disabled: draft.pool.length < 3, run: () => setProcessing(true), back: () => setExitOpen(true) },
@@ -137,7 +140,7 @@ export function SellFlow({
         setConfirmTried(true);
         if (confirmProblems(draft).length === 0) go("price");
       },
-      back: () => go("review"),
+      back: () => (draft.fromKitLegit ? setExitOpen(true) : go("review")),
     },
     price: {
       label: "List it for free",
@@ -150,7 +153,7 @@ export function SellFlow({
   const topBar = (
     <div className={clsx("sticky top-0 z-20 -mx-4 mb-5 flex items-center gap-3 border-b border-neutral-100 bg-white/95 px-4 py-2.5 backdrop-blur", surface === "store" && "sm:-mx-6 sm:px-6")}>
       <div className="flex items-center gap-1">
-        {BAR_STEPS.map((st, i) => (
+        {barSteps.map((st, i) => (
           <div key={st} className="flex items-center gap-1">
             <span
               className={clsx(
@@ -160,7 +163,7 @@ export function SellFlow({
             >
               {i < stepIndex ? <Check className="h-3 w-3" strokeWidth={3} /> : i + 1}
             </span>
-            {i < BAR_STEPS.length - 1 && <span className="h-px w-3 bg-neutral-200" />}
+            {i < barSteps.length - 1 && <span className="h-px w-3 bg-neutral-200" />}
           </div>
         ))}
       </div>
@@ -226,6 +229,13 @@ export function SellFlow({
   let body: ReactNode;
   if (draft.step === "upload")
     body = (
+      <>
+      {draft.relistOf && (
+        <p className="mb-4 rounded-2xl bg-accent/5 p-3 text-sm">
+          <span className="font-semibold">You bought this shirt on The Locker.</span> Every listing gets its own check, so add photos and we'll check it
+          again.
+        </p>
+      )}
       <UploadStep
         draft={draft}
         kit={kitFor(shirt)}
@@ -235,6 +245,7 @@ export function SellFlow({
         demo={demo}
         handoff={handoff("Rather use your phone's camera?", "Scan to take the photos on your phone. Anything you've added here comes with you.")}
       />
+      </>
     );
   else if (draft.step === "review")
     body = (
@@ -273,7 +284,21 @@ export function SellFlow({
         }
       />
     );
-  else if (draft.step === "confirm") body = <ConfirmStep draft={draft} attempted={confirmTried} />;
+  else if (draft.step === "confirm")
+    body = (
+      <>
+        {record && (
+          <div className="mx-auto mb-4 flex max-w-2xl gap-3 rounded-2xl bg-ink p-4 text-sm text-white">
+            <ShieldCheck className="h-5 w-5 shrink-0" />
+            <p>
+              <span className="font-semibold">Checked on KitLegit · {record.certificate}.</span> No new check needed: add the size and a price, and it goes
+              live straight away.
+            </p>
+          </div>
+        )}
+        <ConfirmStep draft={draft} attempted={confirmTried} />
+      </>
+    );
   else body = <PriceStep draft={draft} />;
 
   return wrap(

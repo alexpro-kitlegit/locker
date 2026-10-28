@@ -65,6 +65,18 @@ The prototype's shapes are in [`src/lib/types.ts`](../src/lib/types.ts). Points 
 - **Auto transfer job:** a daily job pays out any entry past `auto_transfer_at` to the seller's bank (Stripe Connect payout).
 - **`club_credits`** now belong to a user and may come from several sales (no longer one order each).
 
+## Learned from finishing the seller side (v0.5)
+
+- **`seller_profiles`** (or columns on `profiles`): status (none/verified), type (private/business), business_name, dob, address, tax_id (masked; NI or UTR), bank_last4, terms_accepted_at, no_printer, holiday, bundle_discount, failed_streak, on_hold, fast_dispatch.
+- **`notifications`**: user, kind, title, body, link (type + id, resolved per surface), read, created_at. They also drive push and email.
+- **`conversations`** (listing, buyer, seller, updated_at) and **`messages`** (conversation, from, kind text/offer/system, text, amount, blocked flag + reason for moderation logs).
+- **`offers`** (or the live offer on the conversation): amount, by, status pending/accepted/declined/expired, expires_at. An accepted offer sets **`listings.reserved_for`** (buyer, price, until).
+- **`reviews`**: order, from, to, stars, text. Ratings are computed from them.
+- **`kitlegit_records`**: a fan's checks from the KitLegit app (certificate, shirt, condition, verdict). Probably a view over KitLegit's `checks` once accounts are linked. `listing_id` once listed.
+- **`listings`** adds: `source` (check / kitlegit), `relisted_from`, `previous_price`, `expert_review` (fee, requested_at, due_at, outcome), status `expert_review`.
+- **`orders`** adds: `extra_listing_ids` + `bundle_discount` (bundles), status `cancelled` + `cancellation` (by seller or deadline, reason), dispatch reminder state. The `dpd` carrier is print-only.
+- **Wallet entries are per shirt**, so a bundle's money can become each club's credit.
+
 ## Pricing rules seen so far
 
 - Buyer pays one all-in price: item + our fee + postage (+ protection?).

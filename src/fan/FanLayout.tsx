@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { Home, PlusCircle, Search, User, Wallet } from "lucide-react";
+import { Bell, Home, PlusCircle, Search, User, Wallet } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { LockerLogo, PoweredByKitLegit } from "../components/ui";
@@ -32,6 +32,7 @@ export function FanLayout() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { pathname } = useLocation();
   const s = useLocker();
+  const unread = s.notifications.filter((n) => n.userId === s.meId && !n.read).length;
   const walletAlert = unreviewed(s, s.meId).length > 0 || s.orders.some((o) => o.sellerId === s.meId && o.status === "paid");
 
   useEffect(() => {
@@ -45,7 +46,15 @@ export function FanLayout() {
         <Link to="/app">
           <LockerLogo className="text-sm" />
         </Link>
-        <PoweredByKitLegit />
+        <span className="flex items-center gap-2">
+          <PoweredByKitLegit />
+          <Link to="/app/inbox" className="relative rounded-full p-1.5 hover:bg-neutral-100" aria-label="Inbox">
+            <Bell className="h-5 w-5" />
+            {unread > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">{unread}</span>
+            )}
+          </Link>
+        </span>
       </header>
       <div ref={scrollRef} className="no-scrollbar flex-1 overflow-y-auto">
         <Outlet />

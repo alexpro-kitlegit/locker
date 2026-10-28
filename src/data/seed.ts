@@ -1,16 +1,45 @@
 import { buyerFee, CARRIERS } from "../lib/pricing";
 import { newEntry } from "../lib/wallet";
-import type { Listing, LockerState, User } from "../lib/types";
+import type { Listing, LockerState, SellerProfile, User } from "../lib/types";
 
 const daysAgo = (d: number, h = 0) => new Date(Date.now() - (d * 24 + h) * 3600_000).toISOString();
 
+const verified = (extra: Partial<SellerProfile> = {}): SellerProfile => ({
+  status: "verified",
+  type: "private",
+  bankLast4: "4417",
+  termsAcceptedAt: daysAgo(400),
+  bundleDiscount: 0,
+  failedStreak: 0,
+  taxYear: { sales: 8, earnings: 31000 },
+  ...extra,
+});
+
 const USERS: User[] = [
-  { id: "u-sam", email: "sam.carter@example.com", name: "Sam Carter", clubId: "harbour-city", city: "Bristol", rating: 4.9, sales: 12 },
-  { id: "u-jordan", email: "jordan.ellis@example.com", name: "Jordan Ellis", clubId: "harbour-city", city: "Cardiff", rating: 5.0, sales: 0 },
-  { id: "u-priya", email: "priya.shah@example.com", name: "Priya Shah", clubId: "harbour-city", city: "Leeds", rating: 4.8, sales: 31 },
-  { id: "u-tom", email: "tom.whitaker@example.com", name: "Tom Whitaker", clubId: "northgate", city: "Newcastle", rating: 4.7, sales: 8 },
-  { id: "u-lena", email: "lena.novak@example.com", name: "Lena Novak", clubId: "kingsmere", city: "Brighton", rating: 5.0, sales: 19 },
-  { id: "u-marcus", email: "marcus.bell@example.com", name: "Marcus Bell", clubId: "northgate", city: "Glasgow", rating: 4.6, sales: 4 },
+  {
+    id: "u-sam",
+    email: "sam.carter@example.com",
+    name: "Sam Carter",
+    clubId: "harbour-city",
+    city: "Bristol",
+    sales: 12,
+    joinedAt: daysAgo(420),
+    // Close to HMRC's limit of 30 sales, to show the warning.
+    seller: verified({
+      dob: "1991-04-12",
+      address: { line1: "14 Alder Close", city: "Bristol", postcode: "BS3 4QR" },
+      taxId: "QQ •• •• •• C",
+      bundleDiscount: 10,
+      fastDispatch: true,
+      taxYear: { sales: 23, earnings: 104000 },
+    }),
+  },
+  // Jordan has never sold: starting to sell goes through seller onboarding.
+  { id: "u-jordan", email: "jordan.ellis@example.com", name: "Jordan Ellis", clubId: "harbour-city", city: "Cardiff", sales: 0, joinedAt: daysAgo(30), seller: { status: "none", bundleDiscount: 0, failedStreak: 0, taxYear: { sales: 0, earnings: 0 } } },
+  { id: "u-priya", email: "priya.shah@example.com", name: "Priya Shah", clubId: "harbour-city", city: "Leeds", sales: 31, joinedAt: daysAgo(700), seller: verified({ type: "business", businessName: "Priya's Retro Kits", fastDispatch: true, bundleDiscount: 15 }) },
+  { id: "u-tom", email: "tom.whitaker@example.com", name: "Tom Whitaker", clubId: "northgate", city: "Newcastle", sales: 8, joinedAt: daysAgo(200), seller: verified() },
+  { id: "u-lena", email: "lena.novak@example.com", name: "Lena Novak", clubId: "kingsmere", city: "Brighton", sales: 19, joinedAt: daysAgo(500), seller: verified({ fastDispatch: true }) },
+  { id: "u-marcus", email: "marcus.bell@example.com", name: "Marcus Bell", clubId: "northgate", city: "Glasgow", sales: 4, joinedAt: daysAgo(90), seller: verified() },
 ];
 
 type SeedListing = [string, Listing["clubId"], Listing["type"], string, Listing["size"], Listing["condition"], number, string, Partial<Listing>?];
@@ -29,7 +58,7 @@ const LISTINGS: SeedListing[] = [
   ["l-2003", "northgate", "Third", "2019/20", "L", "Excellent", 3300, "u-tom"],
   ["l-2004", "northgate", "Home", "1995/96", "L", "Average", 14000, "u-priya", { nfcTag: "FN-30112", printing: "MCALLISTER 10" }],
   ["l-3001", "kingsmere", "Home", "2023/24", "M", "New with tags", 5200, "u-tom"],
-  ["l-3002", "kingsmere", "Away", "2017/18", "XL", "Poor", 2900, "u-lena"],
+  ["l-3002", "kingsmere", "Away", "2017/18", "XL", "Poor", 2900, "u-lena", { status: "sold" }],
   ["l-3003", "kingsmere", "Third", "2021/22", "S", "Excellent", 3600, "u-marcus"],
   // Non-partner clubs: The Locker app only, no club store, no club credit.
   ["l-4001", "eastbridge", "Home", "2004/05", "L", "Average", 6200, "u-priya"],
@@ -150,6 +179,32 @@ export function seedState(): LockerState {
         tracking: "IP 7713 0286 4490",
         createdAt: daysAgo(27),
       },
+      {
+        // Sam bought this from Lena. Re-listing it means a new check.
+        id: "LK-18800",
+        listingId: "l-3002",
+        buyerId: "u-sam",
+        sellerId: "u-lena",
+        channel: "club",
+        clubId: "kingsmere",
+        itemPrice: 2900,
+        fee: buyerFee(2900),
+        postage: CARRIERS.evri.price,
+        total: 2900 + buyerFee(2900) + CARRIERS.evri.price,
+        paymentMethod: "card",
+        carrier: "evri",
+        dropOff: "Home delivery · 14 Alder Close",
+        status: "completed",
+        events: [
+          { status: "paid", at: daysAgo(48) },
+          { status: "dispatched", at: daysAgo(47) },
+          { status: "in_transit", at: daysAgo(46) },
+          { status: "delivered", at: daysAgo(44) },
+          { status: "completed", at: daysAgo(42) },
+        ],
+        tracking: "EV 4410 8823 1190",
+        createdAt: daysAgo(48),
+      },
     ],
     drafts: [],
     wallet: [
@@ -159,6 +214,45 @@ export function seedState(): LockerState {
     ],
     walletMoves: [],
     credits: [],
-    demo: { nextVerdict: "authentic", unsureId: false },
+    kitlegit: [
+      // Checks Sam did in the KitLegit app. Authentic ones can be listed straight away.
+      { id: "kl-1", userId: "u-sam", certificate: "KL-51022", clubId: "kingsmere", type: "Home", season: "2023/24", condition: "Excellent", verdict: "authentic", checkedAt: daysAgo(40) },
+      { id: "kl-2", userId: "u-sam", certificate: "KL-50317", clubId: "harbour-city", type: "Third", season: "2020/21", condition: "New with tags", verdict: "authentic", checkedAt: daysAgo(95) },
+      { id: "kl-3", userId: "u-sam", certificate: "KL-49880", clubId: "northgate", type: "Home", season: "2019/20", condition: "Average", verdict: "counterfeit", checkedAt: daysAgo(150) },
+    ],
+    reviews: [
+      { id: "r-1", orderId: "LK-19870", from: "u-priya", to: "u-sam", stars: 5, text: "Exactly as described and sent the next day. Thanks!", at: daysAgo(63) },
+      { id: "r-2", orderId: "LK-20102", from: "u-marcus", to: "u-sam", stars: 5, text: "Great shirt, well packed.", at: daysAgo(21) },
+      { id: "r-3", orderId: "old-1", from: "u-tom", to: "u-sam", stars: 4, text: "Good seller, a day slower than I hoped.", at: daysAgo(120) },
+      { id: "r-4", orderId: "LK-18800", from: "u-sam", to: "u-lena", stars: 5, text: "Lovely retro shirt, quick delivery.", at: daysAgo(40) },
+      { id: "r-5", orderId: "old-2", from: "u-jordan", to: "u-priya", stars: 5, text: "Brilliant, would buy again.", at: daysAgo(10) },
+      { id: "r-6", orderId: "old-3", from: "u-tom", to: "u-priya", stars: 5, text: "Perfect condition.", at: daysAgo(30) },
+      { id: "r-7", orderId: "old-4", from: "u-marcus", to: "u-priya", stars: 4, text: "Good, small mark not mentioned.", at: daysAgo(50) },
+      { id: "r-8", orderId: "old-5", from: "u-priya", to: "u-lena", stars: 5, text: "Spot on.", at: daysAgo(80) },
+      { id: "r-9", orderId: "old-6", from: "u-sam", to: "u-tom", stars: 4, text: "All good.", at: daysAgo(70) },
+    ],
+    conversations: [
+      // Jordan has made an offer on Sam's Away 2022/23: Sam can accept, decline or counter.
+      {
+        id: "c-1",
+        listingId: "l-1008",
+        buyerId: "u-jordan",
+        sellerId: "u-sam",
+        messages: [
+          { id: "m-1", from: "u-jordan", at: daysAgo(0, 5), kind: "text", text: "Hi! Is it the player or the stadium version?" },
+          { id: "m-2", from: "u-sam", at: daysAgo(0, 4), kind: "text", text: "Stadium version. Worn twice, no marks." },
+          { id: "m-3", from: "u-jordan", at: daysAgo(0, 1), kind: "offer", amount: 3400 },
+        ],
+        offer: { amount: 3400, by: "u-jordan", status: "pending", expiresAt: new Date(Date.now() + 47 * 3600_000).toISOString() },
+        updatedAt: daysAgo(0, 1),
+      },
+    ],
+    notifications: [
+      { id: "n-1", userId: "u-sam", kind: "offer", title: "Jordan offered £34.00", body: "For your Away 2022/23. Accept, decline or counter.", link: { to: "conversation", id: "c-1" }, at: daysAgo(0, 1), read: false },
+      { id: "n-2", userId: "u-sam", kind: "money_in", title: "£56.41 is in your wallet", body: "Your Home 2019/20 sale is complete.", link: { to: "payout", id: "LK-20417" }, at: daysAgo(1, 2), read: false },
+      { id: "n-3", userId: "u-sam", kind: "tax", title: "You're close to HMRC's reporting limit", body: "23 sales this year. We report sellers with 30+ sales or about £1,700 a year.", link: { to: "wallet" }, at: daysAgo(2), read: true },
+      { id: "n-4", userId: "u-sam", kind: "review", title: "Marcus left you 5 stars", body: "\u201cGreat shirt, well packed.\u201d", link: { to: "profile" }, at: daysAgo(21), read: true },
+    ],
+    demo: { nextVerdict: "authentic", unsureId: false, expertVerdict: "authentic" },
   };
 }

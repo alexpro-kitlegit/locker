@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { ExternalLink } from "lucide-react";
+import { Bell, ExternalLink } from "lucide-react";
 import { createContext, useContext, useEffect, useState } from "react";
 import { Link, Navigate, Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
 import { Crest, LockerLogo } from "../components/ui";
@@ -36,6 +36,7 @@ export function StoreLayout() {
 
   const base = `/store/${club.id}`;
   const user = s.storeUserId ? s.users[s.storeUserId] : null;
+  const unread = user ? s.notifications.filter((n) => n.userId === user.id && !n.read).length : 0;
   const embedded = window.self !== window.top;
   const requireSignIn = (next?: string) => {
     if (user) {
@@ -68,6 +69,14 @@ export function StoreLayout() {
               >
                 Sell yours
               </button>
+              {user && (
+                <Link to={`${base}/inbox`} className="relative ml-1 rounded-full p-1.5 hover:bg-black/10" aria-label="Inbox">
+                  <Bell className="h-5 w-5" />
+                  {unread > 0 && (
+                    <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">{unread}</span>
+                  )}
+                </Link>
+              )}
               {user ? (
                 <Link
                   to={`${base}/account`}

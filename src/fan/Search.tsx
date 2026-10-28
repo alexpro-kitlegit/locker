@@ -6,6 +6,7 @@ import { ListingCard } from "../components/ListingCard";
 import { CLUBS } from "../data/clubs";
 import { isRetro, shirtTitle } from "../lib/format";
 import { useLocker } from "../lib/store";
+import { isVisible } from "../lib/reputation";
 import type { ShirtType } from "../lib/types";
 
 const TYPES: (ShirtType | "Retro")[] = ["Home", "Away", "Third", "Goalkeeper", "Retro"];
@@ -18,7 +19,7 @@ export function Search() {
   const [q, setQ] = useState("");
 
   const results = s.listings.filter((l) => {
-    if (l.status !== "live") return false;
+    if (!isVisible(s, l)) return false;
     if (club && l.clubId !== club) return false;
     if (type === "Retro" ? !isRetro(l.season) : type && l.type !== type) return false;
     if (q) {

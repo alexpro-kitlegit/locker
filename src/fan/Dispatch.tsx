@@ -2,9 +2,10 @@ import { Download, MapPin, Printer } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { QrCode } from "../components/QrCode";
 import { BackHeader, Button, DemoButton, PrototypeControls } from "../components/ui";
-import { dispatchOrder } from "../lib/actions";
+import { dispatchOrder, resendLabel } from "../lib/actions";
+import { useState } from "react";
 import { sendBy, shirtTitle } from "../lib/format";
-import { CARRIERS } from "../lib/pricing";
+import { CARRIERS, PRINT_ONLY } from "../lib/pricing";
 import { useLocker } from "../lib/store";
 import type { Order, User } from "../lib/types";
 
@@ -16,6 +17,7 @@ export function Dispatch() {
   const { id } = useParams();
   const s = useLocker();
   const navigate = useNavigate();
+  const [resent, setResent] = useState(false);
   const order = s.orders.find((o) => o.id === id);
   if (!order) return <BackHeader title="Order not found" />;
 
@@ -23,6 +25,7 @@ export function Dispatch() {
   const seller = s.users[order.sellerId];
   const buyer = s.users[order.buyerId];
   const carrier = CARRIERS[order.carrier];
+  const printOnly = PRINT_ONLY.includes(order.carrier);
 
   return (
     <div className="pb-6">
@@ -35,11 +38,19 @@ export function Dispatch() {
           </p>
         </div>
 
-        <div className="flex flex-col items-center gap-3 rounded-2xl bg-neutral-50 p-5 text-center">
-          <QrCode seed={order.id} className="h-44 w-44" />
-          <p className="font-semibold">Show this at any {carrier.name} drop-off point</p>
-          <p className="text-xs text-neutral-500">They print the label for you. No printer needed.</p>
-        </div>
+        {printOnly ? (
+          <div className="space-y-2 rounded-2xl bg-neutral-50 p-5 text-center">
+            <Printer className="mx-auto h-10 w-10 text-neutral-400" />
+            <p className="font-semibold">{carrier.name} needs a printed label</p>
+            <p className="text-xs text-neutral-500">Print it and stick it on the parcel. No printer? Turn on "I don't have a printer" in Me, and buyers won't see {carrier.name}.</p>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-3 rounded-2xl bg-neutral-50 p-5 text-center">
+            <QrCode seed={order.id} className="h-44 w-44" />
+            <p className="font-semibold">Show this at any {carrier.name} drop-off point</p>
+            <p className="text-xs text-neutral-500">They print the label for you. No printer needed.</p>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-2">
           <Button variant="secondary" onClick={() => printLabel(order, seller, buyer)}>
@@ -50,9 +61,19 @@ export function Dispatch() {
           </Button>
         </div>
 
+        <button
+          onClick={() => {
+            resendLabel(order.id);
+            setResent(true);
+          }}
+          className="block w-full text-center text-sm font-semibold text-locker"
+        >
+          {resent ? `Sent again to ${seller.email}` : "Email it to me again"}
+        </button>
+
         <ol className="space-y-2 text-sm text-neutral-600">
           <li>1. Fold the shirt into a mailing bag{listing.nfcTag ? " with the FanNFC tag fixed on" : ""}.</li>
-          <li>2. Take it to a {carrier.name} point and show the QR code (or stick the printed label on).</li>
+          <li>2. Take it to a {carrier.name} point and {printOnly ? "hand it over with the printed label on" : "show the QR code (or stick the printed label on)"}.</li>
           <li>3. That's it. We'll tell you when it's on its way.</li>
         </ol>
 

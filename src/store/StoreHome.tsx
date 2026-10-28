@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ListingCard } from "../components/ListingCard";
 import { isRetro } from "../lib/format";
 import { useLocker } from "../lib/store";
+import { isVisible } from "../lib/reputation";
 import type { Club, Listing } from "../lib/types";
 import { useClub } from "./StoreLayout";
 
@@ -17,7 +18,7 @@ export function StoreHome() {
   const [size, setSize] = useState<string | null>(null);
 
   const listings = s.listings
-    .filter((l) => l.clubId === club.id && (l.status === "live" || l.status === "sold"))
+    .filter((l) => l.clubId === club.id && (isVisible(s, l) || l.status === "sold"))
     .filter((l) => (filter === "All" ? true : filter === "Retro" ? isRetro(l.season) : l.type === filter))
     .filter((l) => !size || l.size === size)
     // Live first, newest first. Recently sold shirts stay visible as social proof.

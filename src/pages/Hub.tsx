@@ -97,7 +97,8 @@ export function Hub() {
               ))}
             </ol>
             <p className="mt-4 text-sm text-neutral-500">
-              Shortcut: Sam's wallet already holds £118.41 from three sales (Harbour City, Northgate, and a non-partner club), so you can try Move money and splits straight away.
+              Shortcuts: Sam's wallet holds £118.41 from three sales. Jordan has made an offer on Sam's Away 2022/23 (Sam's inbox). Sam has
+              shirts checked in the KitLegit app to list without a new check. Jordan has never sold, so selling as Jordan starts with onboarding.
             </p>
           </div>
 

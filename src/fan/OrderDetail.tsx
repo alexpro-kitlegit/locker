@@ -5,7 +5,8 @@ import { ShirtTile } from "../components/ListingCard";
 import { OrderTimeline } from "../components/OrderTimeline";
 import { BackHeader, Button, DemoButton, PrototypeControls, Row } from "../components/ui";
 import { getClub } from "../data/clubs";
-import { advanceOrder, confirmReceived } from "../lib/actions";
+import { advanceOrder, cancelOrder, confirmReceived, dispatchDayPasses, orderListingIds, startRelist } from "../lib/actions";
+import { ReviewPrompt } from "../components/seller";
 import { firstName, releaseAt, sendBy, shirtTitle } from "../lib/format";
 import { CARRIERS, formatGBP } from "../lib/pricing";
 import { useLocker } from "../lib/store";
@@ -23,6 +24,7 @@ export function OrderDetail() {
   const s = useLocker();
   const navigate = useNavigate();
   const [problem, setProblem] = useState<"closed" | "open" | "sent">("closed");
+  const [cancelling, setCancelling] = useState(false);
   const order = s.orders.find((o) => o.id === id);
   if (!order) return <BackHeader title="Order not found" />;
 
@@ -31,6 +33,7 @@ export function OrderDetail() {
   const other = s.users[selling ? order.buyerId : order.sellerId];
   const soldVia = order.channel === "club" ? `${getClub(order.clubId)!.name} store` : "The Locker app";
   const deliveredAt = order.events.find((e) => e.status === "delivered")?.at;
+  const extras = orderListingIds(order).slice(1).map((lid) => s.listings.find((l) => l.id === lid)!);
 
   return (
     <div className="pb-6">
@@ -46,8 +49,24 @@ export function OrderDetail() {
               {selling ? `Sold to ${firstName(other.name)} via ${soldVia}` : `From ${firstName(other.name)}`}
             </p>
             <p className="mt-1 font-bold">{formatGBP(selling ? order.itemPrice : order.total)}</p>
+            {extras.length > 0 && (
+              <p className="text-xs text-neutral-500">
+                Bundle: + {extras.map((x) => shirtTitle(x)).join(", ")}
+                {order.bundleDiscount ? ` · ${order.bundleDiscount}% off` : ""}
+              </p>
+            )}
           </div>
         </div>
+
+        {order.status === "cancelled" && order.cancellation && (
+          <div className="rounded-2xl bg-neutral-100 p-4 text-sm">
+            <p className="font-semibold">Cancelled</p>
+            <p className="text-neutral-600">
+              {order.cancellation.by === "seller" ? `${selling ? "You" : firstName(other.name)} cancelled it: ${order.cancellation.reason.toLowerCase()}.` : "It wasn't sent within 5 working days."}{" "}
+              {selling ? "The buyer was refunded in full." : `You've been refunded ${formatGBP(order.total)}.`}
+            </p>
+          </div>
+        )}
 
         {selling && order.status === "paid" && (
           <div className="space-y-3 rounded-2xl bg-locker-soft p-4">
@@ -61,7 +80,33 @@ export function OrderDetail() {
             <Button block onClick={() => navigate(`/app/orders/${order.id}/label`)}>
               Get your label
             </Button>
+            {(order.dispatchReminders ?? 0) >= 3 && (
+              <p className="text-xs font-semibold text-red-600">
+                {order.dispatchReminders === 4 ? "Last day: send it today or the order is cancelled." : "Reminder: 2 working days left to send it."}
+              </p>
+            )}
+            {cancelling ? (
+              <div className="space-y-2 rounded-xl bg-white p-3">
+                <p className="text-sm font-semibold">Why are you cancelling?</p>
+                {["It's damaged", "I can't find it", "I sold it somewhere else", "Something else"].map((r) => (
+                  <button key={r} onClick={() => cancelOrder(order.id, "seller", r)} className="block w-full rounded-lg bg-neutral-50 px-3 py-2 text-left text-sm">
+                    {r}
+                  </button>
+                ))}
+                <p className="text-xs text-neutral-500">The buyer is refunded in full. Cancellations show on your profile.</p>
+              </div>
+            ) : (
+              <button onClick={() => setCancelling(true)} className="text-xs font-semibold text-neutral-500 underline">
+                Can't send it? Cancel the sale
+              </button>
+            )}
           </div>
+        )}
+
+        {selling && order.status === "paid" && (
+          <PrototypeControls title="Prototype: days pass without sending (reminders on days 3 and 4, cancelled on day 5)">
+            <DemoButton onClick={() => dispatchDayPasses(order.id)}>Simulate: a working day passes (day {(order.dispatchReminders ?? 0) + 1})</DemoButton>
+          </PrototypeControls>
         )}
 
         {selling && order.status === "delivered" && deliveredAt && (
@@ -102,14 +147,23 @@ export function OrderDetail() {
         )}
 
         {!selling && order.status === "completed" && (
-          <div className="flex gap-3 rounded-2xl bg-ink p-4 text-sm text-white">
-            <ShieldCheck className="h-5 w-5 shrink-0" />
-            <p>
-              The KitLegit certificate {listing.check.certificate} is now in your name. If you sell it later, it's
-              already checked.
+          <div className="space-y-3 rounded-2xl bg-ink p-4 text-sm text-white">
+            <p className="flex gap-3">
+              <ShieldCheck className="h-5 w-5 shrink-0" />
+              The KitLegit certificate {listing.check.certificate} is now in your name.
             </p>
+            {!s.listings.some((l) => l.relistedFrom === listing.id) && (
+              <button
+                onClick={() => navigate(`/app/sell/${startRelist(s.meId, order.id, { surface: "app" })}`)}
+                className="w-full rounded-full bg-white py-2 text-sm font-semibold text-ink"
+              >
+                Sell it again (we'll check it again first)
+              </button>
+            )}
           </div>
         )}
+
+        {order.status === "completed" && <ReviewPrompt orderId={order.id} from={s.meId} to={other.id} />}
 
         <section>
           <h2 className="mb-3 text-sm font-bold">Tracking</h2>

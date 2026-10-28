@@ -12,16 +12,12 @@ import { allInPrice, formatGBP } from "../lib/pricing";
 import { useLocker } from "../lib/store";
 import { AUTO_TRANSFER_DAYS, unreviewed, walletBalance, walletEntries } from "../lib/wallet";
 import { WalletEntryRow } from "../components/WalletEntryRow";
-import type { Listing, ListingStatus } from "../lib/types";
+import type { Listing } from "../lib/types";
+import { LISTING_STATUS } from "../lib/status";
+import { SellerSettings, TaxCard } from "../components/seller";
 import { useStore } from "./StoreLayout";
 
-const STATUS: Record<ListingStatus, { label: string; tone: string }> = {
-  in_review: { label: "Getting ready", tone: "bg-amber-50 text-amber-700" },
-  live: { label: "Live", tone: "bg-green-50 text-green-700" },
-  rejected: { label: "Couldn't list", tone: "bg-red-50 text-red-700" },
-  sold: { label: "Sold", tone: "bg-neutral-100 text-neutral-600" },
-  withdrawn: { label: "Withdrawn", tone: "bg-neutral-100 text-neutral-600" },
-};
+const STATUS = LISTING_STATUS;
 
 /**
  * The fan's Locker account, seen through the club's store. It is the same account as in The Locker
@@ -172,6 +168,22 @@ export function StoreAccount() {
         </div>
       </section>
 
+      {user.seller.status === "verified" && (
+        <section className="space-y-3">
+          <SectionTitle
+            action={
+              <Link to={`${base}/seller/${user.id}`} className="text-sm font-semibold text-accent">
+                Your public profile
+              </Link>
+            }
+          >
+            Selling
+          </SectionTitle>
+          <SellerSettings userId={user.id} />
+          <TaxCard userId={user.id} />
+        </section>
+      )}
+
       {purchases.length > 0 && (
         <section>
           <SectionTitle>Bought</SectionTitle>
@@ -197,7 +209,7 @@ export function StoreAccount() {
 
 function ListingRow({ listing, highlight, storeClubId }: { listing: Listing; highlight: boolean; storeClubId: string }) {
   const lc = getClub(listing.clubId)!;
-  const inThisStore = listing.clubId === storeClubId && listing.status === "live";
+  const inThisStore = listing.clubId === storeClubId;
   const body = (
     <>
       <ShirtTile listing={listing} compact className="w-14 shrink-0" />
@@ -223,6 +235,9 @@ function ListingRow({ listing, highlight, storeClubId }: { listing: Listing; hig
       {body}
     </Link>
   ) : (
-    <div className={cls}>{body}</div>
+    // Other clubs' shirts aren't in this store: manage them in The Locker app.
+    <Link to={`/app/listing/${listing.id}`} target="_top" className={cls}>
+      {body}
+    </Link>
   );
 }

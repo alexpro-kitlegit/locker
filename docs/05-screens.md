@@ -43,6 +43,20 @@ Not ported (unused in KitLegit's live flow, or backend-only): StepIndicator, Flo
 
 Drafts appear on the app's Home and Sell tabs and in the club store account ("Unfinished listings").
 
+## Seller tools (v0.5, app and club store)
+
+| Screen | App route | Store route | What it does |
+|---|---|---|---|
+| Sell start | `/app/sell` | `/store/:club/sell` | Onboarding gate, account-on-hold screen, drafts, "Sell a new shirt", "Already checked on KitLegit" (list without a new check), "Bought here before?" (re-list, checked again) |
+| Seller onboarding | `/app/onboarding` | `/store/:club/onboarding` | Why → about you (private/business) → address (postcode lookup) → tax ID (NI/UTR) → Stripe ID and bank (mock) → seller terms → ready |
+| Inbox | `/app/inbox` | `/store/:club/inbox` | Notifications (bell with unread count in the header) and message threads |
+| Conversation | `/app/inbox/:id` | `/store/:club/inbox/:id` | Questions, quick-question chips, offers / counters / accept / decline, "Buy it now" at the accepted price, guardrails |
+| Listing (own) | `/app/listing/:id` | `/store/:club/item/:id` | Status, edit price (shows a price drop), withdraw / put back up, paid expert review for rejected listings |
+| Seller profile | `/app/seller/:id` | `/store/:club/seller/:id` | Rating, badges (ID verified, fast dispatch, business, top rated), cancellations, reviews, shirts, Bundle mode |
+| Order (seller) | `/app/orders/:id` | — | Send-by date, reminders, "Can't send it? Cancel the sale" (reasons), rating the buyer |
+| Label | `/app/orders/:id/label` | — | QR code, or print-only for DPD; "Email it to me again" |
+| Me / account | `/app/me` | `/store/:club/account` | Selling settings (holiday mode, no printer, bundle discount), HMRC tax card with a warning near the limits |
+
 ## Club stores (white-label)
 
 | Screen | Route | What it does | Real integrations | Data |

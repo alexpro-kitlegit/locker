@@ -1,27 +1,18 @@
-import { useEffect } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { SellFlow } from "../components/sell/SellFlow";
-import { createDraft } from "../lib/actions";
-import { getState } from "../lib/store";
+import { SellStart } from "../components/sell/SellStart";
+import { storeRoutes } from "../lib/routes";
 import { useStore } from "./StoreLayout";
 
-/** /store/:club/sell: picks up an empty draft or starts one, then hands over to the draft route. */
+/** /store/:club/sell: onboarding first if needed, then the same choices as the app. */
 export function StoreSellStart() {
   const { club, user } = useStore();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!user) return;
-    const st = getState();
-    const empty = st.drafts.find(
-      (d) => d.ownerId === user.id && d.startedOn.clubId === club.id && d.pool.length === 0 && Object.keys(d.slots).length === 0,
-    );
-    const id = empty?.id ?? createDraft(user.id, { surface: "store", clubId: club.id });
-    navigate(`/store/${club.id}/sell/${id}`, { replace: true });
-  }, [user?.id]);
-
   if (!user) return <Navigate to={`/store/${club.id}`} replace />;
-  return null;
+  return (
+    <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
+      <SellStart userId={user.id} routes={storeRoutes(club.id)} startedOn={{ surface: "store", clubId: club.id }} draftHref={(id) => `/store/${club.id}/sell/${id}`} />
+    </div>
+  );
 }
 
 export function StoreSell() {

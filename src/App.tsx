@@ -5,6 +5,7 @@ import { FanLayout } from "./fan/FanLayout";
 import { FanCheckout } from "./fan/FanCheckout";
 import { Dispatch } from "./fan/Dispatch";
 import { Home } from "./fan/Home";
+import { FanConversation, FanInbox, FanOnboarding, FanSellerProfile } from "./fan/FanInbox";
 import { ListingDetail } from "./fan/ListingDetail";
 import { Me } from "./fan/Me";
 import { OrderDetail } from "./fan/OrderDetail";
@@ -16,6 +17,7 @@ import { WalletMovePage } from "./fan/WalletMove";
 import { DemoSplit } from "./pages/DemoSplit";
 import { Hub } from "./pages/Hub";
 import { StoreAccount } from "./store/StoreAccount";
+import { StoreConversation, StoreInbox, StoreOnboarding, StoreSellerProfile } from "./store/StorePages";
 import { StoreCheckout } from "./store/StoreCheckout";
 import { StoreHome } from "./store/StoreHome";
 import { StoreItem } from "./store/StoreItem";
@@ -50,6 +52,10 @@ export default function App() {
         <Route path="orders/:id" element={<OrderDetail />} />
         <Route path="orders/:id/label" element={<Dispatch />} />
         <Route path="payout/:id" element={<Payout />} />
+        <Route path="inbox" element={<FanInbox />} />
+        <Route path="inbox/:id" element={<FanConversation />} />
+        <Route path="seller/:id" element={<FanSellerProfile />} />
+        <Route path="onboarding" element={<FanOnboarding />} />
       </Route>
 
       {/* Club stores: one site, themed per club. In production the club comes from the domain. */}
@@ -63,6 +69,10 @@ export default function App() {
         <Route path="account" element={<StoreAccount />} />
         <Route path="payout/:orderId" element={<StorePayout />} />
         <Route path="wallet/move" element={<StoreWalletMove />} />
+        <Route path="inbox" element={<StoreInbox />} />
+        <Route path="inbox/:id" element={<StoreConversation />} />
+        <Route path="seller/:id" element={<StoreSellerProfile />} />
+        <Route path="onboarding" element={<StoreOnboarding />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
