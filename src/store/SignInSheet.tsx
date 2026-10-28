@@ -1,7 +1,8 @@
 import { Mail, X } from "lucide-react";
 import { useState } from "react";
 import { Button, Crest, LockerLogo } from "../components/ui";
-import { setStoreUser } from "../lib/actions";
+import { KitLegitMark } from "../components/KitLegitConnect";
+import { connectKitLegit, setStoreUser } from "../lib/actions";
 import { useLocker } from "../lib/store";
 import type { Club } from "../lib/types";
 
@@ -11,6 +12,8 @@ import type { Club } from "../lib/types";
  * - Shopify clubs: the fan's Shopify customer account is linked to a Locker account on first use.
  * - Clubs with their own login (SSO): "Continue with Rovers ID" links it the same way.
  * - Otherwise: a Locker account with an email code, styled in club colours.
+ * - Anywhere: "Continue with KitLegit" signs a KitLegit user in and connects their checks in one go.
+ *   It only works that way round: a Locker account never creates a KitLegit one.
  */
 export function SignInSheet({ club, onClose, onSignedIn }: { club: Club; onClose: () => void; onSignedIn: () => void }) {
   const s = useLocker();
@@ -21,6 +24,10 @@ export function SignInSheet({ club, onClose, onSignedIn }: { club: Club; onClose
   const signIn = () => {
     setStoreUser(persona);
     onSignedIn();
+  };
+  const signInWithKitLegit = () => {
+    connectKitLegit(persona);
+    signIn();
   };
 
   return (
@@ -62,6 +69,12 @@ export function SignInSheet({ club, onClose, onSignedIn }: { club: Club; onClose
           </div>
         )}
 
+        {user.kitlegit && (
+          <button onClick={signInWithKitLegit} className="flex w-full items-center justify-center gap-2 rounded-full border border-neutral-200 py-2.5 text-sm font-semibold hover:bg-neutral-50">
+            <KitLegitMark className="h-5 w-5 rounded-md text-[8px]" /> Continue with KitLegit
+          </button>
+        )}
+
         <p className="flex flex-wrap items-center justify-center gap-1 border-t border-neutral-100 pt-4 text-center text-xs text-neutral-500">
           One account for every club's Locker and the <LockerLogo className="text-xs" /> app.
         </p>
@@ -69,7 +82,7 @@ export function SignInSheet({ club, onClose, onSignedIn }: { club: Club; onClose
         <div className="rounded-2xl border border-dashed border-amber-400 bg-amber-50 p-3 text-xs">
           <p className="mb-1.5 font-semibold uppercase tracking-wide text-amber-700">Prototype: sign in as</p>
           <select value={persona} onChange={(e) => setPersona(e.target.value)} className="w-full rounded-lg border border-amber-300 bg-white px-2 py-1">
-            <option value="u-sam">Sam Carter (seller, same account as the app)</option>
+            <option value="u-sam">Sam Carter (seller, same account as the app, has KitLegit)</option>
             <option value="u-jordan">Jordan Ellis (buyer)</option>
           </select>
         </div>

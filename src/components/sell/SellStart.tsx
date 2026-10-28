@@ -2,6 +2,7 @@ import { BadgeCheck, Camera, PauseCircle, RotateCcw, ShieldCheck } from "lucide-
 import { useNavigate } from "react-router-dom";
 import { getClub } from "../../data/clubs";
 import { DraftRow, hasContent } from "../../fan/Sell";
+import { KitLegitConnect } from "../KitLegitConnect";
 import { createDraft, liftHold, startFromKitLegit, startRelist } from "../../lib/actions";
 import { formatDate, shirtTitle } from "../../lib/format";
 import type { SurfaceRoutes } from "../../lib/routes";
@@ -31,7 +32,8 @@ export function SellStart({
   const navigate = useNavigate();
   const user = s.users[userId];
   const drafts = s.drafts.filter((d) => d.ownerId === userId && hasContent(d));
-  const checks = s.kitlegit.filter((r) => r.userId === userId && !r.listingId);
+  const connected = !!user.kitlegit?.connectedAt;
+  const checks = connected ? s.kitlegit.filter((r) => r.userId === userId && !r.listingId) : [];
   const bought = s.orders.filter(
     (o) => o.buyerId === userId && o.status === "completed" && !s.drafts.some((d) => d.relistOf === o.listingId) && !s.listings.some((l) => l.relistedFrom === o.listingId),
   );
@@ -103,6 +105,8 @@ export function SellStart({
           <span className="text-xs opacity-80">Add photos and we'll do the rest.</span>
         </span>
       </button>
+
+      {!connected && <KitLegitConnect userId={userId} compact />}
 
       {checks.length > 0 && (
         <section>

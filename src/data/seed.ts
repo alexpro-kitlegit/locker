@@ -33,6 +33,8 @@ const USERS: User[] = [
       fastDispatch: true,
       taxYear: { sales: 23, earnings: 104000 },
     }),
+    // Sam uses the KitLegit app but hasn't connected it to The Locker yet.
+    kitlegit: { username: "samcarter_kits" },
   },
   // Jordan has never sold: starting to sell goes through seller onboarding.
   { id: "u-jordan", email: "jordan.ellis@example.com", name: "Jordan Ellis", clubId: "harbour-city", city: "Cardiff", sales: 0, joinedAt: daysAgo(30), seller: { status: "none", bundleDiscount: 0, failedStreak: 0, taxYear: { sales: 0, earnings: 0 } } },

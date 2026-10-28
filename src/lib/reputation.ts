@@ -9,8 +9,20 @@ export function rating(s: LockerState, userId: string) {
 export const completedSales = (s: LockerState, userId: string) =>
   s.orders.filter((o) => o.sellerId === userId && o.status === "completed").length;
 
-export const sellerCancellations = (s: LockerState, userId: string) =>
-  s.orders.filter((o) => o.sellerId === userId && o.status === "cancelled").length;
+/** How far back cancellations count on a seller's profile. */
+export const CANCELLATION_WINDOW_DAYS = 90;
+
+/**
+ * Cancellations that count against a seller: missing the 5-working-day deadline, or cancelling a sale
+ * themselves (damaged, can't find it, sold elsewhere). Either way the buyer was let down. A cancellation
+ * the buyer agreed to, or one caused by The Locker or the carrier, wouldn't count (not in the prototype yet).
+ */
+export const sellerCancellations = (s: LockerState, userId: string) => {
+  const since = Date.now() - CANCELLATION_WINDOW_DAYS * 86400_000;
+  return s.orders.filter(
+    (o) => o.sellerId === userId && o.status === "cancelled" && o.cancellation && new Date(o.cancellation.at).getTime() >= since,
+  ).length;
+};
 
 export function badges(s: LockerState, userId: string): string[] {
   const u = s.users[userId];

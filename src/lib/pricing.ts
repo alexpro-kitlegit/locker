@@ -39,6 +39,10 @@ export const PRINT_ONLY: Carrier[] = ["dpd"];
 /** Smallest amount a seller can move out of the wallet (to the bank or club credit). */
 export const MIN_MOVE = 500;
 
+/** Offers can be at most 20% below the listing price. */
+export const MAX_OFFER_DISCOUNT = 0.2;
+export const minOffer = (price: number) => Math.ceil(price * (1 - MAX_OFFER_DISCOUNT));
+
 /** Placeholder price of a KitLegit expert review of a rejected listing. */
 export const EXPERT_REVIEW_FEE = 499;
 

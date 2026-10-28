@@ -1,5 +1,6 @@
 import { BadgeCheck, Bell, ChevronRight, HelpCircle, Landmark, MapPin, Star } from "lucide-react";
 import { Link } from "react-router-dom";
+import { KitLegitConnect } from "../components/KitLegitConnect";
 import { ShirtTile } from "../components/ListingCard";
 import { SellerSettings, TaxCard } from "../components/seller";
 import { Crest, SectionTitle } from "../components/ui";
@@ -99,6 +100,11 @@ export function Me() {
           </div>
         </section>
       )}
+
+      <section>
+        <SectionTitle>Connected apps</SectionTitle>
+        <KitLegitConnect userId={me.id} />
+      </section>
 
       <section className="divide-y divide-neutral-100 rounded-2xl border border-neutral-200">
         <SettingRow icon={<BadgeCheck className="h-4 w-4" />} label="Identity" value={verified ? "Verified by Stripe" : "Not set up"} />

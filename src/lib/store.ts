@@ -4,7 +4,7 @@ import type { LockerState } from "./types";
 
 // Prototype-only state: everything lives in localStorage, so the fan app and a club store
 // open side by side (or in iframes) stay in sync. The real thing is Supabase.
-const KEY = "the-locker-prototype:v7";
+const KEY = "the-locker-prototype:v8";
 
 function load(): LockerState {
   try {

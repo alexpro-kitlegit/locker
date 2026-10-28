@@ -52,6 +52,12 @@ export interface User {
   sales: number;
   joinedAt: string;
   seller: SellerProfile;
+  /**
+   * The fan's KitLegit account, if they have one. Links are one way: a KitLegit account can sign in to
+   * (or connect to) The Locker, but a Locker account never creates a KitLegit one.
+   * connectedAt is set once the fan allows The Locker to read their KitLegit checks.
+   */
+  kitlegit?: { username: string; connectedAt?: string };
 }
 
 /** Everything collected at seller onboarding, plus selling settings and account state. */

@@ -1,6 +1,6 @@
 import { getClub } from "../data/clubs";
 import { blockedWords, contactDetails } from "./moderation";
-import { buyerFee, CARRIERS, EXPERT_REVIEW_FEE, NFC_THRESHOLD, payoutAmount } from "./pricing";
+import { buyerFee, CARRIERS, EXPERT_REVIEW_FEE, minOffer, NFC_THRESHOLD, payoutAmount } from "./pricing";
 import { priceFor } from "./reputation";
 import { getState, setState } from "./store";
 import type {
@@ -68,6 +68,26 @@ export function completeOnboarding(userId: string, profile: Partial<SellerProfil
 
 export function updateSeller(userId: string, patch: Partial<SellerProfile>) {
   setState((s) => updateSellerIn(s, userId, patch));
+}
+
+/**
+ * Connects a KitLegit account (an OAuth consent, like "Sign in with Google"). The Locker can then read the
+ * fan's checks and certificates, so authentic ones can be listed without a new check.
+ */
+export function connectKitLegit(userId: string, username?: string) {
+  setState((s) => {
+    const u = s.users[userId];
+    const name = u.kitlegit?.username ?? username ?? u.name.toLowerCase().replace(/[^a-z]/g, "");
+    return { ...s, users: { ...s.users, [userId]: { ...u, kitlegit: { username: name, connectedAt: now() } } } };
+  });
+}
+
+/** Disconnecting stops The Locker reading new checks. Shirts already listed from KitLegit stay listed. */
+export function disconnectKitLegit(userId: string) {
+  setState((s) => {
+    const u = s.users[userId];
+    return { ...s, users: { ...s.users, [userId]: { ...u, kitlegit: u.kitlegit && { username: u.kitlegit.username } } } };
+  });
 }
 
 /** Prototype control: support lifts a hold after investigating. */
@@ -315,6 +335,8 @@ export function makeOffer(convId: string, from: string, amount: number) {
     const l = s.listings.find((x) => x.id === c.listingId)!;
     const to = from === c.buyerId ? c.sellerId : c.buyerId;
     const counter = from === c.sellerId;
+    // Server-side rule: no more than 20% below the listing price, and always below it.
+    if (amount < minOffer(l.price) || amount >= l.price) return s;
     const next = addMessage(
       s,
       convId,

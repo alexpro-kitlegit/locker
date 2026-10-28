@@ -58,11 +58,11 @@
 
 ## From finishing the seller side (v0.5)
 
-21. **Expert review fee:** £4.99 is a placeholder. Refunded if the expert overturns the rejection? Does an overturned rejection remove a strike (the prototype takes one off), and lift a hold?
-22. **Offers:** minimum offer (e.g. 60% of the price)? The prototype uses 48 hours for an answer and 24 hours to pay after acceptance. How many counters?
-23. **Seller cancellations:** what counts against the seller (all reasons, or not "damaged")? At what point does it lead to a hold?
+21. **Expert review fee:** ~~refunded if the expert overturns the rejection?~~ **Decided: no, the fee is kept either way.** It pays for a person's time, whatever the result. Still open: the real price (£4.99 is a placeholder), and does an overturned rejection remove a strike (the prototype takes one off), and lift a hold?
+22. ~~**Offers:** minimum offer?~~ **Decided: no more than 20% below the listing price** (built). Still open: the prototype uses 48 hours for an answer and 24 hours to pay after acceptance. How many counters?
+23. **Seller cancellations:** ~~what counts?~~ **Decided: not sending on time counts.** The prototype also counts the seller choosing to cancel (damaged, can't find it, sold elsewhere), and shows the count on the profile for 90 days. Not counting: a cancellation the buyer agrees to, or one caused by The Locker or the carrier (not built). Still open: at what point does it lead to a warning or a hold (suggestion: warning at 3 in 90 days, hold at 5)?
 24. **Refunds:** always to the original payment method? Wallet-paid orders back to the wallet?
-25. **KitLegit-app checks:** how does The Locker read a fan's KitLegit checks (same account, or a linked KitLegit account)? Does the listing reuse the KitLegit photos?
+25. ~~**KitLegit-app checks:** same account or linked?~~ **Decided: linked, one way** (built). A KitLegit account can sign in to The Locker ("Continue with KitLegit") or be connected from Locker settings, like linking Google apps. A Locker account never creates a KitLegit account. Still open: does the listing reuse the KitLegit photos? Do KitLegit users get anything for connecting?
 26. **Bundles in club stores:** bundles are app-only in the prototype (a club store only shows its own club's shirts). Allow bundles within one club store?
 27. **Reviews:** can they be edited or removed? Are reviews shown for buyers as well as sellers?
 28. **Holiday mode:** does it pause offers and messages too, or just hide listings?

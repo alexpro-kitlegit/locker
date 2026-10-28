@@ -47,7 +47,7 @@ export function ManageListing({ listing }: { listing: Listing }) {
               <div className="space-y-2 rounded-2xl bg-neutral-50 p-3 text-sm">
                 <p>
                   An expert review costs <span className="font-semibold">{formatGBP(EXPERT_REVIEW_FEE)}</span> and usually takes up to 24 hours. If the expert
-                  confirms it's authentic, your listing goes live.
+                  confirms it's authentic, your listing goes live. The fee pays for the expert's time, so it isn't refunded either way.
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   <Button variant="secondary" onClick={() => setConfirmExpert(false)}>

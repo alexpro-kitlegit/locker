@@ -1,6 +1,7 @@
 import clsx from "clsx";
 import { ChevronRight, LogOut, Smartphone } from "lucide-react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { KitLegitConnect } from "../components/KitLegitConnect";
 import { ShirtTile } from "../components/ListingCard";
 import { QrCode } from "../components/QrCode";
 import { Crest, LockerLogo, SectionTitle } from "../components/ui";
@@ -183,6 +184,11 @@ export function StoreAccount() {
           <TaxCard userId={user.id} />
         </section>
       )}
+
+      <section>
+        <SectionTitle>Connected apps</SectionTitle>
+        <KitLegitConnect userId={user.id} />
+      </section>
 
       {purchases.length > 0 && (
         <section>

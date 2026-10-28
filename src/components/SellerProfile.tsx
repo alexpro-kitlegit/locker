@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { getClub } from "../data/clubs";
 import { formatDate } from "../lib/format";
 import { allInPrice, formatGBP } from "../lib/pricing";
-import { badges, completedSales, isVisible, rating, sellerCancellations } from "../lib/reputation";
+import { badges, CANCELLATION_WINDOW_DAYS, completedSales, isVisible, rating, sellerCancellations } from "../lib/reputation";
 import type { SurfaceRoutes } from "../lib/routes";
 import { useLocker } from "../lib/store";
 import { ListingCard, ShirtTile } from "./ListingCard";
@@ -51,7 +51,9 @@ export function SellerProfile({ userId, viewerId, routes, onlyClubId }: { userId
           </span>
         ))}
         {sellerCancellations(s, userId) > 0 && (
-          <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-xs font-medium text-neutral-600">Cancelled {sellerCancellations(s, userId)} sale recently</span>
+          <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-xs font-medium text-neutral-600">
+            Cancelled {sellerCancellations(s, userId)} {sellerCancellations(s, userId) === 1 ? "sale" : "sales"} in the last {CANCELLATION_WINDOW_DAYS} days
+          </span>
         )}
         {u.seller.holiday && <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">On holiday</span>}
       </div>

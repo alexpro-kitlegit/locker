@@ -29,11 +29,13 @@ The seller journey as agreed, then everything else it depends on: missing steps,
 | Failed checks | **3 failures in a row → account temporarily on hold** while we investigate |
 | Minimum price | **None** |
 | Listing text | Blocked words: listings containing them can't be submitted (name/number, description) |
-| Offers | Yes, like Vinted: buyer makes an offer; seller accepts, declines or counters |
+| Offers | Yes, like Vinted: buyer makes an offer; seller accepts, declines or counters. **No more than 20% below the listing price** |
 | Messages (pre-sale questions) | **Yes**: one thread per listing and buyer, offers inside it, AI guardrails |
 | KitLegit-app checks | A shirt already checked (authentic) in the KitLegit app can be listed in The Locker **without a new check**. Needs KitLegit to expose a user's checks to The Locker |
+| KitLegit and Locker accounts | **Linked, one way.** KitLegit users can "Continue with KitLegit" to sign in to The Locker, or connect KitLegit from Locker settings (an OAuth consent: read checks, results, certificates and username; nothing else). Locker users don't get a KitLegit account |
+| Seller cancellations | Count against the seller: **not sending on time**, and cancelling a sale themselves. Shown on the profile for 90 days. Buyer-agreed or Locker/carrier-caused cancellations don't count |
 | Re-listing a shirt bought on The Locker | Allowed, but it **is checked again** (unlike a KitLegit-app check) |
-| Expert review of a rejected listing | Paid (placeholder £4.99). If the expert says authentic, the listing goes live |
+| Expert review of a rejected listing | Paid (placeholder £4.99). If the expert says authentic, the listing goes live. **The fee isn't refunded either way**: it pays for human time, and the seller is told before paying |
 | Minimum move out of the wallet | **£5** (to the bank or club credit) |
 | Listing management, notifications, reputation, seller cancellations (like Vinted), tax visibility, bundles | Yes, all in the prototype (v0.5) |
 

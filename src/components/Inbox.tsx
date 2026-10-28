@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { markNotificationsRead, makeOffer, respondToOffer, sendMessage } from "../lib/actions";
 import { formatDateTime, shirtTitle } from "../lib/format";
-import { allInPrice, formatGBP } from "../lib/pricing";
+import { allInPrice, formatGBP, MAX_OFFER_DISCOUNT, minOffer } from "../lib/pricing";
 import { useLocker } from "../lib/store";
 import { isAppLink, linkHref, type SurfaceRoutes } from "../lib/routes";
 import type { Conversation } from "../lib/types";
@@ -247,17 +247,19 @@ export function ConversationView({ convId, userId, routes }: { convId: string; u
   );
 }
 
-/** Offer or counter: quick amounts below the price, or type one. */
+/** Offer or counter: quick amounts below the price, or type one. Never more than 20% below the price. */
 export function OfferComposer({ listingPrice, counter, onSend, onCancel }: { listingPrice: number; counter?: boolean; onSend: (amount: number) => void; onCancel: () => void }) {
   const [text, setText] = useState((Math.round(listingPrice * 0.9) / 100).toFixed(2));
   const amount = Math.round(parseFloat(text || "0") * 100);
+  const lowest = minOffer(listingPrice);
+  const tooLow = amount > 0 && amount < lowest;
   return (
     <div className="space-y-3 rounded-2xl border border-neutral-200 p-4">
       <p className="text-sm font-semibold">{counter ? "Counter offer" : "Make an offer"}</p>
       <div className="flex gap-2">
-        {[0.95, 0.9, 0.85].map((f) => (
-          <button key={f} onClick={() => setText((Math.round(listingPrice * f) / 100).toFixed(2))} className="flex-1 rounded-xl border border-neutral-200 py-2 text-sm">
-            {formatGBP(Math.round(listingPrice * f))}
+        {[0.95, 0.9, 1 - MAX_OFFER_DISCOUNT].map((f) => (
+          <button key={f} onClick={() => setText((Math.max(Math.round(listingPrice * f), lowest) / 100).toFixed(2))} className="flex-1 rounded-xl border border-neutral-200 py-2 text-sm">
+            {formatGBP(Math.max(Math.round(listingPrice * f), lowest))}
             <span className="block text-[10px] text-neutral-500">−{Math.round((1 - f) * 100)}%</span>
           </button>
         ))}
@@ -266,12 +268,18 @@ export function OfferComposer({ listingPrice, counter, onSend, onCancel }: { lis
         <span className="text-2xl font-bold">£</span>
         <input value={text} onChange={(e) => setText(e.target.value.replace(/[^0-9.]/g, ""))} inputMode="decimal" className="w-full bg-transparent text-2xl font-bold outline-none" />
       </label>
-      <p className="text-xs text-neutral-500">Listed at {formatGBP(listingPrice)}. {counter ? "" : "The seller has 48 hours to answer."}</p>
+      {tooLow ? (
+        <p className="text-xs font-medium text-red-600">Offers can be up to 20% below the price. The lowest is {formatGBP(lowest)}.</p>
+      ) : (
+        <p className="text-xs text-neutral-500">
+          Listed at {formatGBP(listingPrice)}. Lowest offer {formatGBP(lowest)}. {counter ? "" : "The seller has 48 hours to answer."}
+        </p>
+      )}
       <div className="grid grid-cols-2 gap-2">
         <Button variant="secondary" onClick={onCancel}>
           Cancel
         </Button>
-        <Button disabled={amount <= 0 || amount >= listingPrice} onClick={() => onSend(amount)}>
+        <Button disabled={amount < lowest || amount >= listingPrice} onClick={() => onSend(amount)}>
           Send offer
         </Button>
       </div>

@@ -36,6 +36,7 @@ Every external service the real product needs, and where the prototype fakes it.
 | Partner | Integration | Prototype |
 |---|---|---|
 | **KitLegit** | Run a check inside the sell flow (photos → verdict → certificate). Dispatch check before shipping. Authentic/counterfeit stats for club analytics. The Locker pays per check. | Reuse KitLegit check UI with a mocked verdict |
+| **KitLegit accounts** | "Continue with KitLegit" sign-in and a Connect button in Locker settings: KitLegit acts as an OAuth provider (scopes: checks, certificates, username). Needs a consent screen on KitLegit's side, a way to list a user's checks, and certificate transfer when a listed shirt sells. One way only | Consent sheet + linked flag on the user |
 | **FanNFC** | Tamper-proof tag on high-value shirts, linked to the KitLegit certificate. Tap to verify. | Mock "tap to verify" screen |
 | **Back Four** | Counterfeits are passed on for brand-protection action. | Shown on the ops/club side only |
 | **Club shops** | Credit is issued into the club's shop (Shopify or codes). Monthly settlement. | Mock |

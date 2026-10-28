@@ -93,7 +93,7 @@ export function OrderDetail() {
                     {r}
                   </button>
                 ))}
-                <p className="text-xs text-neutral-500">The buyer is refunded in full. Cancellations show on your profile.</p>
+                <p className="text-xs text-neutral-500">The buyer is refunded in full. Cancelling counts against you, the same as not sending it in time: it shows on your profile for 90 days.</p>
               </div>
             ) : (
               <button onClick={() => setCancelling(true)} className="text-xs font-semibold text-neutral-500 underline">

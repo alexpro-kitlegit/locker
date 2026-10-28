@@ -73,6 +73,9 @@ The prototype's shapes are in [`src/lib/types.ts`](../src/lib/types.ts). Points 
 - **`offers`** (or the live offer on the conversation): amount, by, status pending/accepted/declined/expired, expires_at. An accepted offer sets **`listings.reserved_for`** (buyer, price, until).
 - **`reviews`**: order, from, to, stars, text. Ratings are computed from them.
 - **`kitlegit_records`**: a fan's checks from the KitLegit app (certificate, shirt, condition, verdict). Probably a view over KitLegit's `checks` once accounts are linked. `listing_id` once listed.
+- **`kitlegit_connections`**: Locker user ↔ KitLegit user (kitlegit_user_id, username, scopes, OAuth tokens or a server-to-server grant, connected_at, disconnected_at). One way: created by a KitLegit sign-in or the Connect button, never by a Locker sign-up.
+- **`orders.cancellation`** also needs `counts_against_seller` (true for missed deadline and seller-chosen reasons; false when the buyer agreed or we/the carrier caused it). Profiles count the last 90 days.
+- **Offers** check `amount >= 80%` of the listing price on the server, not just in the app.
 - **`listings`** adds: `source` (check / kitlegit), `relisted_from`, `previous_price`, `expert_review` (fee, requested_at, due_at, outcome), status `expert_review`.
 - **`orders`** adds: `extra_listing_ids` + `bundle_discount` (bundles), status `cancelled` + `cancellation` (by seller or deadline, reason), dispatch reminder state. The `dpd` carrier is print-only.
 - **Wallet entries are per shirt**, so a bundle's money can become each club's credit.
