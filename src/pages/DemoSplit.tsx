@@ -3,14 +3,16 @@ import { Lock, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Crest, LockerLogo } from "../components/ui";
-import { CLUBS } from "../data/clubs";
+import { PARTNER_CLUBS as CLUBS } from "../data/clubs";
+import { setStoreUser } from "../lib/actions";
 import { PhoneFrame, StatusBar } from "../fan/FanLayout";
-import { resetState } from "../lib/store";
+import { resetState, useLocker } from "../lib/store";
 
 /** The fan app and a club store side by side, sharing one set of prototype data. */
 export function DemoSplit() {
   const [clubId, setClubId] = useState(CLUBS[0].id);
   const [frameKey, setFrameKey] = useState(0);
+  const s = useLocker();
   const club = CLUBS.find((c) => c.id === clubId)!;
 
   const reset = () => {
@@ -41,7 +43,7 @@ export function DemoSplit() {
               <iframe key={`app-${frameKey}`} src="/app" title="The Locker app" className="w-full flex-1" />
             </div>
           </PhoneFrame>
-          <p className="text-xs font-medium text-neutral-500">The Locker app · Sam, a Harbour City fan</p>
+          <p className="text-xs font-medium text-neutral-500">The Locker app · signed in as Sam</p>
         </div>
 
         <div className="flex min-h-[640px] w-full min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-neutral-300 bg-white shadow-xl">
@@ -68,9 +70,18 @@ export function DemoSplit() {
             </div>
           </div>
           <iframe key={`${clubId}-${frameKey}`} src={`/store/${clubId}`} title={`${club.name} store`} className="w-full flex-1" />
-          <p className="border-t border-neutral-100 px-3 py-1.5 text-xs text-neutral-500">
-            Club store · Jordan, a fan buying on the club's website
-          </p>
+          <div className="flex items-center gap-2 border-t border-neutral-100 px-3 py-1.5 text-xs text-neutral-500">
+            Club store · signed in as
+            <select
+              value={s.storeUserId ?? ""}
+              onChange={(e) => setStoreUser(e.target.value || null)}
+              className="rounded border border-neutral-200 bg-white px-1 py-0.5"
+            >
+              <option value="">nobody (signed out)</option>
+              <option value="u-sam">Sam, the seller (same account as the app)</option>
+              <option value="u-jordan">Jordan, a buyer</option>
+            </select>
+          </div>
         </div>
       </div>
     </div>

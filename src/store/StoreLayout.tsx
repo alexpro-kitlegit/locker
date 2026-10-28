@@ -1,40 +1,52 @@
 import clsx from "clsx";
-import { ExternalLink, X } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { createContext, useContext, useEffect, useState } from "react";
-import { Link, Navigate, Outlet, useLocation, useParams } from "react-router-dom";
-import { QrCode } from "../components/QrCode";
-import { Button, Crest, LockerLogo } from "../components/ui";
+import { Link, Navigate, Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
+import { Crest, LockerLogo } from "../components/ui";
 import { getClub } from "../data/clubs";
-import { accentVars } from "../lib/format";
-import type { Club } from "../lib/types";
+import { setStoreUser } from "../lib/actions";
+import { accentVars, firstName } from "../lib/format";
+import { useLocker } from "../lib/store";
+import type { Club, User } from "../lib/types";
+import { SignInSheet } from "./SignInSheet";
 
-const ClubContext = createContext<Club | null>(null);
-export const useClub = () => useContext(ClubContext)!;
+interface StoreContext {
+  club: Club;
+  user: User | null;
+  /** Opens sign-in, then goes to `next` (defaults to staying put). */
+  requireSignIn: (next?: string) => void;
+}
 
-/** One store site for every club. The club (and so the theme) comes from the domain in production, the URL here. */
+const Ctx = createContext<StoreContext | null>(null);
+export const useStore = () => useContext(Ctx)!;
+export const useClub = () => useStore().club;
+
+/** One store site for every partner club. The club (and so the theme) comes from the domain in production, the URL here. */
 export function StoreLayout() {
   const { clubId } = useParams();
   const club = getClub(clubId);
-  const [sellOpen, setSellOpen] = useState(false);
+  const s = useLocker();
+  const navigate = useNavigate();
   const { pathname } = useLocation();
+  const [signInNext, setSignInNext] = useState<string | null>(null);
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
-  if (!club) return <Navigate to="/" replace />;
+  if (!club?.partner) return <Navigate to="/" replace />;
 
   const base = `/store/${club.id}`;
+  const user = s.storeUserId ? s.users[s.storeUserId] : null;
   const embedded = window.self !== window.top;
+  const requireSignIn = (next?: string) => {
+    if (user) {
+      if (next) navigate(next);
+    } else setSignInNext(next ?? pathname);
+  };
 
   return (
-    <ClubContext.Provider value={club}>
+    <Ctx.Provider value={{ club, user, requireSignIn }}>
       <div style={accentVars(club.primary, club.secondary, club.onPrimary)} className="flex min-h-screen flex-col bg-white">
-        <header
-          className={clsx(
-            club.template === "classic" && "bg-accent text-on-accent",
-            club.template === "bold" && "bg-accent text-on-accent",
-            club.template === "minimal" && "border-b-[3px] border-accent bg-white text-ink",
-          )}
-        >
+        <header className={clsx(club.template === "minimal" ? "border-b-[3px] border-accent bg-white text-ink" : "bg-accent text-on-accent")}>
           <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:px-6">
             <Link to={base} className="flex min-w-0 items-center gap-2.5">
               <Crest club={club} className="h-9 w-9" />
@@ -44,18 +56,36 @@ export function StoreLayout() {
               </div>
             </Link>
             <nav className="ml-auto flex items-center gap-1 text-sm font-medium">
-              <a className="hidden items-center gap-1 rounded-full px-3 py-1.5 opacity-80 hover:opacity-100 sm:flex">
+              <a className="hidden items-center gap-1 rounded-full px-3 py-1.5 opacity-80 hover:opacity-100 md:flex">
                 Club shop <ExternalLink className="h-3.5 w-3.5" />
               </a>
               <button
-                onClick={() => setSellOpen(true)}
+                onClick={() => requireSignIn(`${base}/sell`)}
                 className={clsx(
                   "rounded-full px-3.5 py-1.5 font-semibold",
-                  club.template === "minimal" ? "bg-accent text-on-accent" : "bg-white/15 hover:bg-white/25",
+                  club.template === "minimal" ? "bg-accent text-on-accent" : "bg-white text-accent hover:bg-white/90",
                 )}
               >
                 Sell yours
               </button>
+              {user ? (
+                <Link
+                  to={`${base}/account`}
+                  className={clsx(
+                    "ml-1 flex items-center gap-2 rounded-full py-1 pl-1 pr-3",
+                    club.template === "minimal" ? "hover:bg-neutral-100" : "hover:bg-white/10",
+                  )}
+                >
+                  <span className="grid h-7 w-7 place-items-center rounded-full bg-accent-2 text-xs font-bold text-ink">
+                    {user.name.split(" ").map((p) => p[0]).join("")}
+                  </span>
+                  <span className="hidden sm:inline">{firstName(user.name)}</span>
+                </Link>
+              ) : (
+                <button onClick={() => requireSignIn()} className="rounded-full px-3 py-1.5 opacity-90 hover:opacity-100">
+                  Sign in
+                </button>
+              )}
             </nav>
           </div>
         </header>
@@ -78,42 +108,34 @@ export function StoreLayout() {
         {!embedded && (
           <div className="fixed bottom-3 left-3 z-20 flex items-center gap-2 rounded-full bg-ink/90 px-3 py-1.5 text-[11px] text-white shadow-lg">
             <span className="font-semibold text-amber-300">Prototype</span>
-            <span className="hidden sm:inline">simulating {club.domain}</span>
+            <span className="hidden sm:inline">simulating {club.domain} ·</span>
+            <select
+              value={s.storeUserId ?? ""}
+              onChange={(e) => setStoreUser(e.target.value || null)}
+              className="rounded bg-white/10 px-1 py-0.5 text-white"
+            >
+              <option value="">Signed out</option>
+              <option value="u-sam">Sam (seller)</option>
+              <option value="u-jordan">Jordan (buyer)</option>
+            </select>
             <Link to="/" className="font-semibold underline">
               All surfaces
             </Link>
           </div>
         )}
 
-        {sellOpen && <SellInAppDialog club={club} onClose={() => setSellOpen(false)} />}
+        {signInNext !== null && (
+          <SignInSheet
+            club={club}
+            onClose={() => setSignInNext(null)}
+            onSignedIn={() => {
+              const next = signInNext;
+              setSignInNext(null);
+              navigate(next);
+            }}
+          />
+        )}
       </div>
-    </ClubContext.Provider>
-  );
-}
-
-function SellInAppDialog({ club, onClose }: { club: Club; onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 z-30 grid place-items-center bg-black/40 p-4" onClick={onClose}>
-      <div className="relative w-full max-w-sm space-y-4 rounded-3xl bg-white p-6 text-center" onClick={(e) => e.stopPropagation()}>
-        <button onClick={onClose} className="absolute right-4 top-4 rounded-full p-1 hover:bg-neutral-100" aria-label="Close">
-          <X className="h-4 w-4" />
-        </button>
-        <LockerLogo className="text-base" />
-        <h2 className="text-xl font-bold">Sell your {club.name} shirt</h2>
-        <p className="text-sm text-neutral-600">
-          Selling happens in The Locker app, where KitLegit checks your shirt. It's free, and it shows up here once
-          it passes.
-        </p>
-        <p className="rounded-2xl bg-accent/10 p-3 text-sm font-semibold text-accent">
-          Get 110% back as {club.name} shop credit
-        </p>
-        <QrCode seed={`app-${club.id}`} className="mx-auto h-32 w-32" />
-        <Link to="/app/sell" target="_top">
-          <Button block className="mt-1">
-            Open The Locker app
-          </Button>
-        </Link>
-      </div>
-    </div>
+    </Ctx.Provider>
   );
 }

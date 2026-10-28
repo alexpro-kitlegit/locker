@@ -31,7 +31,8 @@ export function CheckoutForm({
   header?: ReactNode;
   onPlaced: (orderId: string) => void;
 }) {
-  const { lockerBalance } = useLocker();
+  const { balances } = useLocker();
+  const lockerBalance = balances[buyerId] ?? 0;
   const [carrier, setCarrier] = useState<Carrier>("inpost");
   const [payment, setPayment] = useState<PaymentMethod>("pay_by_bank");
   const [paying, setPaying] = useState(false);

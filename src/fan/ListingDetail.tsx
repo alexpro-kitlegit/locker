@@ -85,7 +85,7 @@ export function ListingDetail() {
             }
           />
           <Row label="Ships from" value={seller.city} />
-          <Row label="Also in" value={`${club.name} store`} />
+          <Row label="Also in" value={club.partner ? `${club.name} store` : "The Locker app only"} />
         </div>
 
         {listing.description && <p className="text-sm text-neutral-600">{listing.description}</p>}
@@ -102,14 +102,25 @@ export function ListingDetail() {
           )
         ) : mine ? (
           <div className="rounded-2xl bg-locker-soft p-4 text-sm">
-            <p className="font-semibold">This is your listing</p>
-            <p className="text-neutral-600">
-              Live in The Locker and the{" "}
-              <Link to={`/store/${club.id}/item/${listing.id}`} className="font-semibold text-locker underline" target="_top">
-                {club.name} store
-              </Link>
-              .
+            <p className="font-semibold">
+              {listing.status === "in_review" ? "Getting your listing ready" : listing.status === "rejected" ? "We couldn't list this shirt" : "This is your listing"}
             </p>
+            {listing.status === "live" && (
+              <p className="text-neutral-600">
+                Live in The Locker
+                {club.partner && (
+                  <>
+                    {" "}and the{" "}
+                    <Link to={`/store/${club.id}/item/${listing.id}`} className="font-semibold text-locker underline" target="_top">
+                      {club.name} store
+                    </Link>
+                  </>
+                )}
+                .
+              </p>
+            )}
+            {listing.status === "in_review" && <p className="text-neutral-600">We're checking a few details. We'll let you know when it's live.</p>}
+            {listing.status === "rejected" && <p className="text-neutral-600">Our authentication team couldn't approve it. You haven't been charged.</p>}
           </div>
         ) : (
           <Button block onClick={() => navigate(`/app/checkout/${listing.id}`)}>

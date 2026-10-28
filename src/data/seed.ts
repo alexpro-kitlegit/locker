@@ -4,12 +4,12 @@ import type { Listing, LockerState, User } from "../lib/types";
 const daysAgo = (d: number, h = 0) => new Date(Date.now() - (d * 24 + h) * 3600_000).toISOString();
 
 const USERS: User[] = [
-  { id: "u-sam", name: "Sam Carter", clubId: "harbour-city", city: "Bristol", rating: 4.9, sales: 12 },
-  { id: "u-jordan", name: "Jordan Ellis", clubId: "harbour-city", city: "Cardiff", rating: 5.0, sales: 0 },
-  { id: "u-priya", name: "Priya Shah", clubId: "harbour-city", city: "Leeds", rating: 4.8, sales: 31 },
-  { id: "u-tom", name: "Tom Whitaker", clubId: "northgate", city: "Newcastle", rating: 4.7, sales: 8 },
-  { id: "u-lena", name: "Lena Novak", clubId: "kingsmere", city: "Brighton", rating: 5.0, sales: 19 },
-  { id: "u-marcus", name: "Marcus Bell", clubId: "northgate", city: "Glasgow", rating: 4.6, sales: 4 },
+  { id: "u-sam", email: "sam.carter@example.com", name: "Sam Carter", clubId: "harbour-city", city: "Bristol", rating: 4.9, sales: 12 },
+  { id: "u-jordan", email: "jordan.ellis@example.com", name: "Jordan Ellis", clubId: "harbour-city", city: "Cardiff", rating: 5.0, sales: 0 },
+  { id: "u-priya", email: "priya.shah@example.com", name: "Priya Shah", clubId: "harbour-city", city: "Leeds", rating: 4.8, sales: 31 },
+  { id: "u-tom", email: "tom.whitaker@example.com", name: "Tom Whitaker", clubId: "northgate", city: "Newcastle", rating: 4.7, sales: 8 },
+  { id: "u-lena", email: "lena.novak@example.com", name: "Lena Novak", clubId: "kingsmere", city: "Brighton", rating: 5.0, sales: 19 },
+  { id: "u-marcus", email: "marcus.bell@example.com", name: "Marcus Bell", clubId: "northgate", city: "Glasgow", rating: 4.6, sales: 4 },
 ];
 
 type SeedListing = [string, Listing["clubId"], Listing["type"], string, Listing["size"], Listing["condition"], number, string, Partial<Listing>?];
@@ -30,6 +30,9 @@ const LISTINGS: SeedListing[] = [
   ["l-3001", "kingsmere", "Home", "2023/24", "M", "Brand new", 5200, "u-tom"],
   ["l-3002", "kingsmere", "Away", "2017/18", "XL", "Fair", 2900, "u-lena"],
   ["l-3003", "kingsmere", "Third", "2021/22", "S", "Excellent", 3600, "u-marcus"],
+  // Non-partner clubs: The Locker app only, no club store, no club credit.
+  ["l-4001", "eastbridge", "Home", "2004/05", "L", "Good", 6200, "u-priya"],
+  ["l-4002", "millbrook", "Away", "2019/20", "M", "Excellent", 2800, "u-marcus"],
 ];
 
 export function seedState(): LockerState {
@@ -58,7 +61,7 @@ export function seedState(): LockerState {
 
   return {
     meId: "u-sam",
-    storeBuyerId: "u-jordan",
+    storeUserId: null,
     users: Object.fromEntries(USERS.map((u) => [u.id, u])),
     listings,
     orders: [
@@ -88,7 +91,8 @@ export function seedState(): LockerState {
         createdAt: daysAgo(4),
       },
     ],
-    lockerBalance: 0,
+    drafts: [],
+    balances: {},
     credits: [],
     demo: { nextVerdict: "authentic" },
   };

@@ -11,7 +11,11 @@ export function ShirtTile({ listing, compact, className = "" }: { listing: Listi
   const club = getClub(listing.clubId)!;
   return (
     <div className={`relative grid aspect-square place-items-center rounded-xl bg-tile ${className}`}>
-      <ShirtArt kit={club.kits[listing.type]} printing={listing.printing} className="h-[78%] w-[78%]" />
+      {listing.photo ? (
+        <img src={listing.photo} alt="" className="absolute inset-0 h-full w-full rounded-[inherit] object-cover" />
+      ) : (
+        <ShirtArt kit={club.kits[listing.type]} printing={listing.printing} className="h-[78%] w-[78%]" />
+      )}
       {!compact && listing.status === "sold" && (
         <span className="absolute left-2 top-2 rounded-full bg-ink px-2 py-0.5 text-[10px] font-bold uppercase text-white">Sold</span>
       )}

@@ -1,17 +1,19 @@
 import { ArrowRight, Columns2, RotateCcw, Smartphone } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Crest, LockerLogo, PoweredByKitLegit } from "../components/ui";
-import { CLUBS, CREDIT_METHOD_NAMES, TEMPLATE_NAMES } from "../data/clubs";
+import { ACCOUNT_METHOD_NAMES, CREDIT_METHOD_NAMES, PARTNER_CLUBS, TEMPLATE_NAMES } from "../data/clubs";
 import { setNextVerdict } from "../lib/actions";
 import { resetState, useLocker } from "../lib/store";
 
 const SCRIPT = [
-  ["Sell", "In the app, tap Sell. Add sample photos and let KitLegit check the shirt. Set a price and list it."],
-  ["See it in the club store", "Open the Harbour City store. The new shirt is there, in club colours, marked Checked by KitLegit."],
-  ["Buy", "As Jordan, buy it in the club store. Pay by bank is first. The money is held."],
+  ["Sign in on the club store", "In the Harbour City store, tap Sell yours. Sam signs in with their Harbour City FC account, linked to a Locker account."],
+  ["Start on the web", "Upload a few photos (or add 3 samples). The next step asks for the labels this brand needs."],
+  ["Finish on the phone", "Missing labels? Scan the code to carry on in the App Clip or The Locker app. The phone shows the same draft."],
+  ["List it", "Add details, see the valuation, set a price. The KitLegit check runs quietly in the background, then the listing goes live."],
+  ["Buy", "Switch the store to Jordan and buy it. Pay by bank is first. The money is held."],
   ["Send", "Back in the app, Wallet shows To send. Do the dispatch check and get the drop-off QR code."],
   ["Deliver", "Use the prototype controls to scan and deliver the parcel. The club store order updates too."],
-  ["Get paid", "Choose 110% club credit, Locker balance or cash. Credit becomes a gift card for the club's shop."],
+  ["Get paid", "Partner club shirt: 110% club credit, Locker balance or cash. Non-partner club shirt: Locker balance or cash."],
 ];
 
 const NEXT = [
@@ -63,15 +65,15 @@ export function Hub() {
 
           <div className="rounded-3xl border border-neutral-200 p-6">
             <h2 className="text-xl font-bold">Club stores</h2>
-            <p className="mt-1 text-sm text-neutral-600">One site, themed per club. Buy-only. Each demo club uses a different template.</p>
+            <p className="mt-1 text-sm text-neutral-600">One site, themed per club. Fans buy and sell here. Each demo club has a different template and sign-in set-up.</p>
             <div className="mt-4 space-y-2">
-              {CLUBS.map((c) => (
+              {PARTNER_CLUBS.map((c) => (
                 <Link key={c.id} to={`/store/${c.id}`} className="flex items-center gap-3 rounded-2xl p-2 hover:bg-neutral-50">
                   <Crest club={c} className="h-8 w-8" />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold">{c.name}</p>
                     <p className="truncate text-xs text-neutral-500">
-                      {c.domain} · {TEMPLATE_NAMES[c.template]} template · {CREDIT_METHOD_NAMES[c.creditMethod]}
+                      {c.domain} · {TEMPLATE_NAMES[c.template!]} template · {CREDIT_METHOD_NAMES[c.creditMethod!]} · {ACCOUNT_METHOD_NAMES[c.accountMethod!]}
                     </p>
                   </div>
                   <ArrowRight className="h-4 w-4 text-neutral-400" />

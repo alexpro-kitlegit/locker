@@ -16,6 +16,7 @@ export function WalletPage() {
   const moving = sales.filter((o) => o.status === "dispatched" || o.status === "in_transit");
   const pending = [...toSend, ...moving].reduce((sum, o) => sum + o.itemPrice, 0);
   const paidOut = sales.filter((o) => o.payout);
+  const credits = s.credits.filter((c) => sales.some((o) => o.id === c.orderId));
 
   return (
     <div className="space-y-6 px-4 pb-6 pt-1">
@@ -24,7 +25,7 @@ export function WalletPage() {
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-2xl bg-locker p-4 text-white">
           <p className="text-xs text-white/80">Locker balance</p>
-          <p className="text-2xl font-bold">{formatGBP(s.lockerBalance)}</p>
+          <p className="text-2xl font-bold">{formatGBP(s.balances[s.meId] ?? 0)}</p>
         </div>
         <div className="rounded-2xl bg-neutral-100 p-4">
           <p className="text-xs text-neutral-500">Held until delivery</p>
@@ -67,13 +68,13 @@ export function WalletPage() {
 
       <section>
         <SectionTitle>Club credit</SectionTitle>
-        {s.credits.length === 0 ? (
+        {credits.length === 0 ? (
           <p className="rounded-2xl bg-neutral-50 p-4 text-sm text-neutral-500">
-            Take a payout as club credit and get 110%. Your codes show up here.
+            Sell a partner club's shirt and take 110% as club credit. Your codes show up here.
           </p>
         ) : (
           <div className="space-y-2">
-            {s.credits.map((c) => {
+            {credits.map((c) => {
               const club = getClub(c.clubId)!;
               return (
                 <div key={c.id} className="flex items-center gap-3 rounded-2xl p-3 text-white" style={{ background: club.primary }}>

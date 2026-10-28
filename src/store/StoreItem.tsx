@@ -5,14 +5,14 @@ import { Button } from "../components/ui";
 import { firstName, formatDate, shirtTitle } from "../lib/format";
 import { allInPrice, buyerFee, formatGBP } from "../lib/pricing";
 import { useLocker } from "../lib/store";
-import { useClub } from "./StoreLayout";
+import { useStore } from "./StoreLayout";
 
 export function StoreItem() {
   const { id } = useParams();
-  const club = useClub();
+  const { club, user, requireSignIn } = useStore();
   const s = useLocker();
   const navigate = useNavigate();
-  const listing = s.listings.find((l) => l.id === id && l.clubId === club.id);
+  const listing = s.listings.find((l) => l.id === id && l.clubId === club.id && (l.status === "live" || l.status === "sold"));
   const base = `/store/${club.id}`;
 
   if (!listing)
@@ -57,8 +57,10 @@ export function StoreItem() {
             <Button block disabled>
               Sold
             </Button>
+          ) : user?.id === listing.sellerId ? (
+            <p className="rounded-2xl bg-accent/5 p-4 text-sm font-medium">This is your listing. It's live here and in The Locker app.</p>
           ) : (
-            <Button block onClick={() => navigate(`${base}/checkout/${listing.id}`)}>
+            <Button block onClick={() => (user ? navigate(`${base}/checkout/${listing.id}`) : requireSignIn(`${base}/checkout/${listing.id}`))}>
               Buy now
             </Button>
           )}

@@ -17,7 +17,7 @@ export function StoreHome() {
   const [size, setSize] = useState<string | null>(null);
 
   const listings = s.listings
-    .filter((l) => l.clubId === club.id && l.status !== "withdrawn")
+    .filter((l) => l.clubId === club.id && (l.status === "live" || l.status === "sold"))
     .filter((l) => (filter === "All" ? true : filter === "Retro" ? isRetro(l.season) : l.type === filter))
     .filter((l) => !size || l.size === size)
     // Live first, newest first. Recently sold shirts stay visible as social proof.

@@ -45,6 +45,18 @@ The prototype's shapes are in [`src/lib/types.ts`](../src/lib/types.ts). Points 
 - **NFC tags** are assigned at listing when the price is at or above a threshold (placeholder £100). The tag is posted to the seller and fixed before dispatch.
 - **Order status set:** `paid → dispatched → in_transit → delivered`, then payout. Disputes branch from any status after `paid`.
 
+## Learned while building the seller flow (v0.2)
+
+- **One Locker account per fan** (see [accounts](06-accounts.md)), plus **`account_links`** (user, provider `shopify` / `club_sso`, external ID, club). **`profiles.favourite_club_id`** is picked at sign-up.
+- **`clubs.is_partner`**: partner clubs have a store and offer 110% credit. Other clubs' shirts can still be sold, in the app only. **`clubs.brand`** drives the required photos.
+- **`listing_drafts`**: owner, where it was started (app or which club store), identified shirt, photo slots (status + storage path), details, price, current step, updated_at. It syncs live between devices for the web → phone hand-off.
+- **Photo slots reuse KitLegit's model:** slot IDs (front, back, neck-label, wash-label, style-code, security-label, hologram, swing-tag, other) and statuses (uploaded, not-present, removed, damaged). Required slots come from KitLegit's **`brand_requirements`** (front, back, wash label by default, plus brand extras).
+- **Listing status adds `in_review` and `rejected`:** the listing is saved straight away and waits while the KitLegit check runs in the background. `in_review → live` or `rejected`. The seller only ever sees "Getting ready" or "Couldn't list".
+- **`listings.listed_via`**: app or a club store (for club analytics and attribution).
+- **Valuation:** an estimate built from KitLegit check data (purchase price on `check_details`) plus Locker sale prices, by shirt, condition and size. It needs a `valuations` view or service.
+- **Payout rule:** club credit is issued at the **shirt's** club, only if it's a partner. The seller's favourite club doesn't affect it. Otherwise: Locker balance or cash.
+- **Balances are per user** (ledger-based, like `token_ledger`).
+
 ## Pricing rules seen so far
 
 - Buyer pays one all-in price: item + our fee + postage (+ protection?).

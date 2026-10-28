@@ -31,6 +31,7 @@ The requirements log, kept up to date as we build. It feeds the flowchart and th
 - [Data model](docs/03-data-model.md): tables, reuse vs new, lessons from the build
 - [Open questions](docs/04-open-questions.md): decisions needed, and assumptions to confirm
 - [Screens](docs/05-screens.md): every screen built, and what it needs for real
+- [Accounts](docs/06-accounts.md): one Locker account, linked to the club's login
 
 ## Stack
 

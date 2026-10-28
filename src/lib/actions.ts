@@ -1,7 +1,8 @@
 import { getClub } from "../data/clubs";
-import { buyerFee, CARRIERS, NFC_THRESHOLD, payoutAmount } from "./pricing";
+import { payoutOptions } from "./payouts";
+import { buyerFee, CARRIERS, NFC_THRESHOLD } from "./pricing";
 import { getState, setState } from "./store";
-import type { Carrier, Listing, Order, OrderStatus, PaymentMethod, PayoutMethod } from "./types";
+import type { Carrier, Draft, Listing, Order, OrderStatus, PaymentMethod, PayoutMethod } from "./types";
 
 const now = () => new Date().toISOString();
 const digits = (n: number) => Array.from({ length: n }, () => Math.floor(Math.random() * 10)).join("");
@@ -10,24 +11,89 @@ const code = (n: number) =>
 
 export const newCheckId = () => `KL-${digits(5)}`;
 
-export function createListing(input: Omit<Listing, "id" | "status" | "createdAt" | "sellerId" | "nfcTag">): string {
-  const id = `l-${digits(6)}`;
-  setState((s) => ({
-    ...s,
-    listings: [
-      {
-        ...input,
-        id,
-        sellerId: s.meId,
-        status: "live",
-        createdAt: now(),
-        nfcTag: input.price >= NFC_THRESHOLD ? `FN-${digits(5)}` : undefined,
-      },
-      ...s.listings,
-    ],
-  }));
+/** How long the background KitLegit check takes in the prototype. */
+const REVIEW_MS = 8000;
+
+// --- Accounts -------------------------------------------------------------
+
+/** Prototype: who is signed in on the club stores. In production this is the fan's own session. */
+export function setStoreUser(userId: string | null) {
+  setState((s) => ({ ...s, storeUserId: userId }));
+}
+
+/** Prototype: a hand-off link signs the app in as the draft's owner (same Locker account). */
+export function setAppUser(userId: string) {
+  setState((s) => (s.meId === userId ? s : { ...s, meId: userId }));
+}
+
+// --- Drafts and listings ----------------------------------------------------
+
+export function createDraft(ownerId: string, startedOn: Draft["startedOn"]): string {
+  const id = `d-${digits(6)}`;
+  setState((s) => ({ ...s, drafts: [{ id, ownerId, startedOn, slots: {}, step: "photos", updatedAt: now() }, ...s.drafts] }));
   return id;
 }
+
+export function updateDraft(id: string, patch: Partial<Draft>) {
+  setState((s) => ({ ...s, drafts: s.drafts.map((d) => (d.id === id ? { ...d, ...patch, updatedAt: now() } : d)) }));
+}
+
+export function deleteDraft(id: string) {
+  setState((s) => ({ ...s, drafts: s.drafts.filter((d) => d.id !== id) }));
+}
+
+/** Submits a draft. The listing waits in review while KitLegit checks it, then goes live or is rejected. */
+export function submitDraft(draftId: string): string {
+  const id = `l-${digits(6)}`;
+  setState((s) => {
+    const d = s.drafts.find((x) => x.id === draftId)!;
+    const checkId = newCheckId();
+    const price = d.price!;
+    const listing: Listing = {
+      id,
+      clubId: d.shirt!.clubId,
+      type: d.shirt!.type,
+      season: d.shirt!.season,
+      size: d.size!,
+      condition: d.condition!,
+      version: d.version,
+      printing: d.printing,
+      price,
+      sellerId: d.ownerId,
+      status: "in_review",
+      reviewDueAt: new Date(Date.now() + REVIEW_MS).toISOString(),
+      createdAt: now(),
+      listedVia: d.startedOn,
+      photo: d.slots.front?.thumb,
+      nfcTag: price >= NFC_THRESHOLD ? `FN-${digits(5)}` : undefined,
+      check: {
+        id: checkId,
+        verdict: s.demo.nextVerdict,
+        certificate: s.demo.nextVerdict === "authentic" ? checkId : undefined,
+        labels: `${Object.values(d.slots).filter((p) => p?.status === "uploaded").length} photos`,
+        checkedAt: now(),
+      },
+    };
+    return { ...s, listings: [listing, ...s.listings], drafts: s.drafts.filter((x) => x.id !== draftId) };
+  });
+  return id;
+}
+
+/** Stands in for KitLegit's result arriving (get-result / webhook). */
+export function resolveDueReviews() {
+  const due = getState().listings.some((l) => l.status === "in_review" && l.reviewDueAt! <= now());
+  if (!due) return;
+  setState((s) => ({
+    ...s,
+    listings: s.listings.map((l) =>
+      l.status === "in_review" && l.reviewDueAt! <= now()
+        ? { ...l, status: l.check.verdict === "authentic" ? "live" : "rejected" }
+        : l,
+    ),
+  }));
+}
+
+// --- Orders -----------------------------------------------------------------
 
 export function placeOrder(input: {
   listingId: string;
@@ -56,11 +122,15 @@ export function placeOrder(input: {
       events: [{ status: "paid", at: now() }],
       createdAt: now(),
     };
+    const balances =
+      input.paymentMethod === "locker_balance"
+        ? { ...s.balances, [input.buyerId]: (s.balances[input.buyerId] ?? 0) - total }
+        : s.balances;
     return {
       ...s,
       orders: [order, ...s.orders],
       listings: s.listings.map((l) => (l.id === listing.id ? { ...l, status: "sold" } : l)),
-      lockerBalance: input.paymentMethod === "locker_balance" ? s.lockerBalance - total : s.lockerBalance,
+      balances,
     };
   });
   return id;
@@ -93,25 +163,29 @@ export function advanceOrder(orderId: string) {
 export function choosePayout(orderId: string, method: PayoutMethod) {
   const s = getState();
   const order = s.orders.find((o) => o.id === orderId)!;
-  const seller = s.users[order.sellerId];
-  const club = getClub(seller.clubId)!;
-  const amount = payoutAmount(order.itemPrice, method);
-  const creditCode = method === "club_credit" ? `${club.initials}-${code(4)}-${code(4)}` : undefined;
+  const listing = s.listings.find((l) => l.id === order.listingId)!;
+  const option = payoutOptions(order.itemPrice, listing.clubId).find((o) => o.method === method)!;
+  const club = option.club;
+  const creditCode = club ? `${club.initials}-${code(4)}-${code(4)}` : undefined;
 
   setState((st) => ({
     ...st,
     orders: st.orders.map((o) =>
-      o.id === orderId
-        ? { ...o, payout: { method, amount, clubId: method === "club_credit" ? club.id : undefined, code: creditCode, at: now() } }
-        : o,
+      o.id === orderId ? { ...o, payout: { method, amount: option.amount, clubId: club?.id, code: creditCode, at: now() } } : o,
     ),
-    lockerBalance: method === "locker_balance" ? st.lockerBalance + amount : st.lockerBalance,
-    credits: creditCode
-      ? [{ id: `cc-${digits(6)}`, clubId: club.id, code: creditCode, amount, orderId, issuedAt: now() }, ...st.credits]
-      : st.credits,
+    balances:
+      method === "locker_balance"
+        ? { ...st.balances, [order.sellerId]: (st.balances[order.sellerId] ?? 0) + option.amount }
+        : st.balances,
+    credits:
+      club && creditCode
+        ? [{ id: `cc-${digits(6)}`, clubId: club.id, code: creditCode, amount: option.amount, orderId, issuedAt: now() }, ...st.credits]
+        : st.credits,
   }));
 }
 
 export function setNextVerdict(verdict: "authentic" | "counterfeit") {
   setState((s) => ({ ...s, demo: { ...s.demo, nextVerdict: verdict } }));
 }
+
+export const clubOf = (clubId: string) => getClub(clubId)!;

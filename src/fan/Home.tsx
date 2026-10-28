@@ -2,7 +2,8 @@ import { ArrowRight, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ListingCard } from "../components/ListingCard";
 import { Crest, SectionTitle } from "../components/ui";
-import { CLUBS, getClub } from "../data/clubs";
+import { getClub, PARTNER_CLUBS } from "../data/clubs";
+import { DraftRow } from "./Sell";
 import { firstName } from "../lib/format";
 import { useLocker } from "../lib/store";
 
@@ -12,6 +13,7 @@ export function Home() {
   const myClub = getClub(me.clubId)!;
   const live = s.listings.filter((l) => l.status === "live" && l.sellerId !== s.meId);
   const fromMyClub = live.filter((l) => l.clubId === myClub.id);
+  const drafts = s.drafts.filter((d) => d.ownerId === s.meId && Object.keys(d.slots).length > 0);
   const newest = [...live].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 6);
 
   return (
@@ -21,11 +23,22 @@ export function Home() {
         <h1 className="text-2xl font-bold tracking-tight">Pre-loved shirts, checked as real.</h1>
       </div>
 
+      {drafts.length > 0 && (
+        <section>
+          <SectionTitle>Finish your listing</SectionTitle>
+          <div className="space-y-2">
+            {drafts.map((d) => (
+              <DraftRow key={d.id} draft={d} to={`/app/sell/${d.id}`} />
+            ))}
+          </div>
+        </section>
+      )}
+
       <Link to="/app/sell" className="flex items-center gap-3 rounded-2xl bg-locker p-4 text-white">
         <ShieldCheck className="h-8 w-8 shrink-0" strokeWidth={1.6} />
         <div className="flex-1">
           <p className="font-semibold">Sell a shirt for free</p>
-          <p className="text-xs text-white/80">KitLegit checks it in the app. Get 110% back as club credit.</p>
+          <p className="text-xs text-white/80">Get 110% back as club credit on partner clubs' shirts.</p>
         </div>
         <ArrowRight className="h-5 w-5" />
       </Link>
@@ -54,7 +67,7 @@ export function Home() {
       <section>
         <SectionTitle>Club stores</SectionTitle>
         <div className="grid grid-cols-3 gap-2">
-          {CLUBS.map((c) => (
+          {PARTNER_CLUBS.map((c) => (
             <Link
               key={c.id}
               to={`/app/search?club=${c.id}`}

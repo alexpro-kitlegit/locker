@@ -20,6 +20,17 @@ Every external service the real product needs, and where the prototype fakes it.
 | 11 | Company, bank, books | Companies House, Starling, Xero | — | Back office | n/a |
 | 12 | Legal + insurance | AI-drafted terms, Superscript, ICO | Sprintlaw review | Terms acceptance at sign-up | Checkbox only |
 
+## Added by the seller flow (v0.2)
+
+| Need | Pick | Used by | Prototype |
+|---|---|---|---|
+| Club sign-in (Shopify clubs) | **Shopify Customer Account API / Multipass**, as part of a Shopify plugin | "Continue with your club account", account linking | Mock button |
+| Club sign-in (other clubs) | **OIDC / OAuth** with the club's identity provider | "Continue with Rovers ID" | Mock button |
+| Fallback sign-in | Supabase Auth (email one-time code) | Clubs with no accounts | Mock |
+| Phone camera without an install | **Apple App Clip** (inside The Locker iOS app). Mobile web camera on Android. | Hand-off from a club store to the phone | QR + "open on this device" |
+| Live draft sync | Supabase Realtime on `listing_drafts` | Web ↔ phone hand-off | localStorage sync |
+| Valuation | KitLegit check data + Locker sales | Price step | Formula with fake sample counts |
+
 ## Partner integrations (not suppliers)
 
 | Partner | Integration | Prototype |

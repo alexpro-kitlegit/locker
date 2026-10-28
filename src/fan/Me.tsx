@@ -7,6 +7,14 @@ import { shirtTitle } from "../lib/format";
 import { allInPrice, formatGBP } from "../lib/pricing";
 import { useLocker } from "../lib/store";
 
+const STATUS = {
+  in_review: { label: "Getting ready", tone: "bg-amber-50 text-amber-700" },
+  live: { label: "Live", tone: "bg-green-50 text-green-700" },
+  rejected: { label: "Couldn't list", tone: "bg-red-50 text-red-700" },
+  sold: { label: "Sold", tone: "bg-neutral-100 text-neutral-600" },
+  withdrawn: { label: "Withdrawn", tone: "bg-neutral-100 text-neutral-600" },
+} as const;
+
 export function Me() {
   const s = useLocker();
   const me = s.users[s.meId];
@@ -32,7 +40,7 @@ export function Me() {
         <Crest club={club} className="h-8 w-8" />
         <div className="flex-1 text-sm">
           <p className="font-semibold">{club.name}</p>
-          <p className="text-xs text-neutral-500">Your club. Credit payouts go to its shop.</p>
+          <p className="text-xs text-neutral-500">Your favourite club. You can sell any club's shirt.</p>
         </div>
       </div>
 
@@ -48,11 +56,7 @@ export function Me() {
                 </p>
                 <p className="text-xs text-neutral-500">{formatGBP(allInPrice(l.price))} to buyers</p>
               </div>
-              <span
-                className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${l.status === "live" ? "bg-green-50 text-green-700" : "bg-neutral-100 text-neutral-600"}`}
-              >
-                {l.status === "live" ? "Live" : "Sold"}
-              </span>
+              <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${STATUS[l.status].tone}`}>{STATUS[l.status].label}</span>
             </Link>
           ))}
         </div>
