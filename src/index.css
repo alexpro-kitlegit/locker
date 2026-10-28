@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Locker blue by default. Club stores override these with the club's colours. */
+  --accent: 42 91 215;
+  --accent-2: 238 243 253;
+  --on-accent: 255 255 255;
+}
+
+html,
+body {
+  background: #ffffff;
+  color: #141414;
+  -webkit-font-smoothing: antialiased;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
