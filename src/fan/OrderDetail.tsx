@@ -3,15 +3,20 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ShirtTile } from "../components/ListingCard";
 import { OrderTimeline } from "../components/OrderTimeline";
-import { QrCode } from "../components/QrCode";
 import { BackHeader, Button, DemoButton, PrototypeControls, Row } from "../components/ui";
 import { getClub } from "../data/clubs";
-import { advanceOrder } from "../lib/actions";
-import { firstName, shirtTitle } from "../lib/format";
+import { advanceOrder, confirmReceived } from "../lib/actions";
+import { firstName, releaseAt, sendBy, shirtTitle } from "../lib/format";
 import { CARRIERS, formatGBP } from "../lib/pricing";
 import { useLocker } from "../lib/store";
 
 const PAYOUT_LABEL = { club_credit: "Club credit", locker_balance: "Locker balance", bank: "Bank transfer" } as const;
+
+const SIMULATE = {
+  dispatched: "Simulate: carrier scans parcel",
+  in_transit: "Simulate: delivered",
+  delivered: "Simulate: 48 hours pass",
+} as const;
 
 export function OrderDetail() {
   const { id } = useParams();
@@ -25,6 +30,7 @@ export function OrderDetail() {
   const selling = order.sellerId === s.meId;
   const other = s.users[selling ? order.buyerId : order.sellerId];
   const soldVia = order.channel === "club" ? `${getClub(order.clubId)!.name} store` : "The Locker app";
+  const deliveredAt = order.events.find((e) => e.status === "delivered")?.at;
 
   return (
     <div className="pb-6">
@@ -46,21 +52,28 @@ export function OrderDetail() {
         {selling && order.status === "paid" && (
           <div className="space-y-3 rounded-2xl bg-locker-soft p-4">
             <p className="flex items-center gap-2 font-semibold">
-              <Package className="h-5 w-5 text-locker" /> Sold! Send it within 3 days
+              <Package className="h-5 w-5 text-locker" /> Sold! Send it by {sendBy(order.createdAt)}
             </p>
             <p className="text-sm text-neutral-600">
-              A quick dispatch check, then drop it at an {CARRIERS[order.carrier].name} point with a QR code. No printer
-              needed. The buyer's money is held until it arrives.
+              {firstName(other.name)} chose {CARRIERS[order.carrier].name}. Your label is ready: show the QR code at the
+              drop-off point, or print it. The money is held until it arrives.
             </p>
-            <Button block onClick={() => navigate(`/app/orders/${order.id}/dispatch`)}>
-              Send it
+            <Button block onClick={() => navigate(`/app/orders/${order.id}/label`)}>
+              Get your label
             </Button>
           </div>
         )}
 
-        {selling && order.status === "delivered" && !order.payout && (
+        {selling && order.status === "delivered" && deliveredAt && (
+          <p className="rounded-2xl bg-locker-soft p-4 text-sm">
+            <span className="font-semibold">Delivered.</span> {firstName(other.name)} has 48 hours to check it. You can
+            choose how you're paid from {releaseAt(deliveredAt)}.
+          </p>
+        )}
+
+        {selling && order.status === "completed" && !order.payout && (
           <div className="space-y-3 rounded-2xl bg-locker-soft p-4">
-            <p className="font-semibold">Delivered. Your money is ready.</p>
+            <p className="font-semibold">Completed. Your money is ready.</p>
             <Button block onClick={() => navigate(`/app/payout/${order.id}`)}>
               Choose how you're paid
             </Button>
@@ -75,7 +88,20 @@ export function OrderDetail() {
           </div>
         )}
 
-        {!selling && order.status === "delivered" && (
+        {!selling && order.status === "delivered" && deliveredAt && (
+          <div className="space-y-3 rounded-2xl bg-locker-soft p-4">
+            <p className="font-semibold">Is everything OK?</p>
+            <p className="text-sm text-neutral-600">
+              You have until {releaseAt(deliveredAt)} to report a problem. After that, the order completes and{" "}
+              {firstName(other.name)} is paid.
+            </p>
+            <Button block onClick={() => confirmReceived(order.id)}>
+              Yes, all good
+            </Button>
+          </div>
+        )}
+
+        {!selling && order.status === "completed" && (
           <div className="flex gap-3 rounded-2xl bg-ink p-4 text-sm text-white">
             <ShieldCheck className="h-5 w-5 shrink-0" />
             <p>
@@ -96,17 +122,14 @@ export function OrderDetail() {
         </section>
 
         {selling && order.status === "dispatched" && (
-          <div className="flex items-center gap-4 rounded-2xl border border-neutral-200 p-3">
-            <QrCode seed={order.id} className="h-20 w-20" />
-            <p className="text-xs text-neutral-500">Drop-off code for {order.dropOff}</p>
-          </div>
+          <Button block variant="secondary" onClick={() => navigate(`/app/orders/${order.id}/label`)}>
+            Show my label again
+          </Button>
         )}
 
-        {(order.status === "dispatched" || order.status === "in_transit") && (
-          <PrototypeControls title="Prototype: carrier tracking (ShipStation)">
-            <DemoButton onClick={() => advanceOrder(order.id)}>
-              {order.status === "dispatched" ? "Simulate: carrier scans parcel" : "Simulate: delivered"}
-            </DemoButton>
+        {(order.status === "dispatched" || order.status === "in_transit" || order.status === "delivered") && (
+          <PrototypeControls title="Prototype: carrier tracking and the 48-hour window">
+            <DemoButton onClick={() => advanceOrder(order.id)}>{SIMULATE[order.status]}</DemoButton>
           </PrototypeControls>
         )}
 
@@ -122,7 +145,7 @@ export function OrderDetail() {
         {problem === "open" && (
           <div className="space-y-3 rounded-2xl border border-neutral-200 p-4 text-sm">
             <p className="font-semibold">What's wrong?</p>
-            {["It hasn't arrived", "It isn't as described", "Something else"].map((r) => (
+            {["It hasn't arrived", "It's damaged", "It isn't as described", "It's the wrong shirt", "I think it's fake"].map((r) => (
               <button key={r} onClick={() => setProblem("sent")} className="block w-full rounded-xl bg-neutral-50 px-3 py-2.5 text-left">
                 {r}
               </button>

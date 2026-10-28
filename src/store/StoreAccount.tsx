@@ -5,9 +5,9 @@ import { ShirtTile } from "../components/ListingCard";
 import { QrCode } from "../components/QrCode";
 import { Crest, LockerLogo, SectionTitle } from "../components/ui";
 import { ACCOUNT_METHOD_NAMES, getClub } from "../data/clubs";
-import { DraftRow } from "../fan/Sell";
+import { DraftRow, hasContent } from "../fan/Sell";
 import { setStoreUser } from "../lib/actions";
-import { shirtTitle } from "../lib/format";
+import { sendBy, shirtTitle } from "../lib/format";
 import { allInPrice, formatGBP } from "../lib/pricing";
 import { useLocker } from "../lib/store";
 import type { Listing, ListingStatus } from "../lib/types";
@@ -34,11 +34,11 @@ export function StoreAccount() {
   if (!user) return <Navigate to={`/store/${club.id}`} replace />;
 
   const base = `/store/${club.id}`;
-  const drafts = s.drafts.filter((d) => d.ownerId === user.id && Object.keys(d.slots).length > 0);
+  const drafts = s.drafts.filter((d) => d.ownerId === user.id && hasContent(d));
   const listings = s.listings.filter((l) => l.sellerId === user.id && l.status !== "sold");
   const sales = s.orders.filter((o) => o.sellerId === user.id);
   const toSend = sales.filter((o) => o.status === "paid");
-  const ready = sales.filter((o) => o.status === "delivered" && !o.payout);
+  const ready = sales.filter((o) => o.status === "completed" && !o.payout);
   const purchases = s.orders.filter((o) => o.buyerId === user.id);
   const credits = s.credits.filter((c) => s.orders.find((o) => o.id === c.orderId)?.sellerId === user.id);
   const favourite = getClub(user.clubId)!;
@@ -88,9 +88,9 @@ export function StoreAccount() {
               <div key={o.id} className="flex items-center gap-4 rounded-2xl border border-neutral-200 p-3">
                 <ShirtTile listing={listingOf(o.listingId)} compact className="w-14 shrink-0" />
                 <div className="flex-1 text-sm">
-                  <p className="font-semibold">Sold! Send {shirtTitle(listingOf(o.listingId))} within 3 days</p>
+                  <p className="font-semibold">Sold! Send {shirtTitle(listingOf(o.listingId))} by {sendBy(o.createdAt)}</p>
                   <p className="flex items-center gap-1 text-xs text-neutral-500">
-                    <Smartphone className="h-3.5 w-3.5" /> Sending happens on your phone: a quick photo check, then a drop-off QR code.
+                    <Smartphone className="h-3.5 w-3.5" /> Your label is ready: scan to get the drop-off QR code on your phone, or print it.
                   </p>
                   <Link to={`/app/orders/${o.id}`} target="_top" className="text-xs font-semibold text-amber-700 underline">
                     Prototype: open on this device

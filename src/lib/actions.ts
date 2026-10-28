@@ -2,7 +2,7 @@ import { getClub } from "../data/clubs";
 import { payoutOptions } from "./payouts";
 import { buyerFee, CARRIERS, NFC_THRESHOLD } from "./pricing";
 import { getState, setState } from "./store";
-import type { Carrier, Draft, Listing, Order, OrderStatus, PaymentMethod, PayoutMethod } from "./types";
+import type { Carrier, Draft, Listing, Order, OrderStatus, PaymentMethod, PayoutMethod, ShirtType } from "./types";
 
 const now = () => new Date().toISOString();
 const digits = (n: number) => Array.from({ length: n }, () => Math.floor(Math.random() * 10)).join("");
@@ -30,7 +30,10 @@ export function setAppUser(userId: string) {
 
 export function createDraft(ownerId: string, startedOn: Draft["startedOn"]): string {
   const id = `d-${digits(6)}`;
-  setState((s) => ({ ...s, drafts: [{ id, ownerId, startedOn, slots: {}, step: "photos", updatedAt: now() }, ...s.drafts] }));
+  setState((s) => ({
+    ...s,
+    drafts: [{ id, ownerId, startedOn, step: "upload", pool: [], slots: {}, details: {}, updatedAt: now() }, ...s.drafts],
+  }));
   return id;
 }
 
@@ -49,28 +52,32 @@ export function submitDraft(draftId: string): string {
     const d = s.drafts.find((x) => x.id === draftId)!;
     const checkId = newCheckId();
     const price = d.price!;
+    const id_ = d.identified!;
+    const uploaded = Object.values(d.slots).filter((x) => x?.photo).length;
     const listing: Listing = {
       id,
-      clubId: d.shirt!.clubId,
-      type: d.shirt!.type,
-      season: d.shirt!.season,
-      size: d.size!,
-      condition: d.condition!,
-      version: d.version,
-      printing: d.printing,
+      clubId: id_.clubId,
+      type: listingType(d),
+      season: id_.season ?? "Unknown",
+      size: d.details.size!,
+      condition: d.details.condition!,
+      version: d.details.version,
+      gender: d.details.gender,
+      printing: d.details.printing,
+      description: d.details.description,
       price,
       sellerId: d.ownerId,
       status: "in_review",
       reviewDueAt: new Date(Date.now() + REVIEW_MS).toISOString(),
       createdAt: now(),
       listedVia: d.startedOn,
-      photo: d.slots.front?.thumb,
+      photo: d.slots.front?.photo?.thumb,
       nfcTag: price >= NFC_THRESHOLD ? `FN-${digits(5)}` : undefined,
       check: {
         id: checkId,
         verdict: s.demo.nextVerdict,
         certificate: s.demo.nextVerdict === "authentic" ? checkId : undefined,
-        labels: `${Object.values(d.slots).filter((p) => p?.status === "uploaded").length} photos`,
+        labels: `${uploaded} photos`,
         checkedAt: now(),
       },
     };
@@ -140,17 +147,17 @@ function updateOrder(orderId: string, update: (o: Order) => Order) {
   setState((s) => ({ ...s, orders: s.orders.map((o) => (o.id === orderId ? update(o) : o)) }));
 }
 
-export function dispatchOrder(orderId: string, dispatchCheckId: string) {
+/** The carrier's first scan at drop-off (a ShipStation tracking event). */
+export function dispatchOrder(orderId: string) {
   updateOrder(orderId, (o) => ({
     ...o,
     status: "dispatched",
-    dispatchCheckId,
     tracking: `${o.carrier === "inpost" ? "IP" : o.carrier === "evri" ? "EV" : "RM"} ${digits(4)} ${digits(4)} ${digits(4)}`,
     events: [...o.events, { status: "dispatched", at: now() }],
   }));
 }
 
-const NEXT: Partial<Record<OrderStatus, OrderStatus>> = { dispatched: "in_transit", in_transit: "delivered" };
+const NEXT: Partial<Record<OrderStatus, OrderStatus>> = { dispatched: "in_transit", in_transit: "delivered", delivered: "completed" };
 
 /** Prototype control: stands in for ShipStation tracking webhooks. */
 export function advanceOrder(orderId: string) {
@@ -158,6 +165,11 @@ export function advanceOrder(orderId: string) {
     const next = NEXT[o.status];
     return next ? { ...o, status: next, events: [...o.events, { status: next, at: now() }] } : o;
   });
+}
+
+/** The buyer says it's all good before the 48 hours are up. */
+export function confirmReceived(orderId: string) {
+  updateOrder(orderId, (o) => (o.status === "delivered" ? { ...o, status: "completed", events: [...o.events, { status: "completed", at: now() }] } : o));
 }
 
 export function choosePayout(orderId: string, method: PayoutMethod) {
@@ -186,6 +198,20 @@ export function choosePayout(orderId: string, method: PayoutMethod) {
 
 export function setNextVerdict(verdict: "authentic" | "counterfeit") {
   setState((s) => ({ ...s, demo: { ...s.demo, nextVerdict: verdict } }));
+}
+
+/** Prototype: make the analysis unsure of the shirt, which sends the seller through season select. */
+export function setUnsureId(unsureId: boolean) {
+  setState((s) => ({ ...s, demo: { ...s.demo, unsureId } }));
+}
+
+/** The listing's shirt type, from KitLegit's kit type and position. */
+export function listingType(d: Draft): ShirtType {
+  if (d.details.position === "Goalkeeper") return "Goalkeeper";
+  const k = d.details.kitType;
+  if (k === "Home" || k === "Away" || k === "Third") return k;
+  if (k === "Fourth" || k === "Training") return "Third";
+  return d.identified?.type ?? "Home";
 }
 
 export const clubOf = (clubId: string) => getClub(clubId)!;

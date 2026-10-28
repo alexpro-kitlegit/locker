@@ -22,15 +22,23 @@ What's built so far, what each screen needs for real, and what it touches. Route
 | Wallet | `/app/wallet` | Locker balance, held money, ready to pay out, to send, on the way, club credit codes, history | Stripe Connect balances | payouts, wallet_ledger |
 | Me | `/app/me` | Profile, your club, your listings, purchases, identity (Stripe), payout bank, notifications, help | Stripe Connect onboarding | profiles |
 
-## Seller flow (v0.2, shared by the app and club stores)
+## Seller flow (v0.3: KitLegit's check flow, ported almost 1:1)
 
-| Step | What it does | Notes |
+Shared by the app and every club store (`src/components/sell/`). It reproduces kitlegit-web's `/check` flow step by step, against mocks. The real product should reuse KitLegit's components and edge functions directly. Differences from KitLegit are marked **Locker**.
+
+| Step | As in KitLegit | Locker changes |
 |---|---|---|
-| 1. Photos | Drop or upload several photos at once (sorted into KitLegit slots), or tap a slot. In the app, the camera opens. | The club store also shows "Rather use your phone's camera?" with a QR code (App Clip / app). |
-| 2. Check photos | "We think it's …" (editable), then the photos this brand needs (from brand_requirements). Missing ones: add, finish on the phone (QR), or "I don't have it" (never had one / removed / damaged). | Same rules as KitLegit's check flow. "Save and finish later" on the web. |
-| 3. Details | Size, condition, version (stadium / player), name and number | |
-| 4. Price | Estimated value (range, number of sales, "use £x"), price, payout options under the partner rule, where it's shown, NFC notice | |
-| Submitted | "Getting your listing ready", then "It's live!" (or "We couldn't list this shirt") | The KitLegit check and certificate are never mentioned to the seller. |
+| Top bar | Numbered step circles, "← Back", primary button with →, exit leads to "Save your progress?" ("Save & Exit" / "Exit Without Saving") | A 4th circle for Price. Drafts also continue on the phone |
+| Select (sport, item type) | — | **Dropped:** The Locker only sells football shirts |
+| 1. Upload | Drop zone "Click or drop photos here", Min 3 · Max 12, 12-tile grid, Recommended Photos with "Find it ›", Example Photos. Narrow: "Add your photos" / "Choose Photos" / "Required Photos". KitLegit's photo checks (duplicate, not an image, >20MB, blank/dark, thumbnail, <400px) with its toast copy. CTA "Analyse Photos" | Phone hand-off card on the club store. Camera capture in the app. Blur detection not in the prototype |
+| Processing | "Did you know..." football facts, stages Uploading photos → Analysing details → Preparing review, min 5s | No KitLegit branding |
+| Season select (only when unsure) | Confirm team & brand → era → season, with "Not Sure"; Back from the first sub-step resets to Upload | — |
+| 2. Review | Slot rows (mandatory first), 4 Other slots, style code / security hidden unless needed. Slot cards with Options menu (upload/replace, move, remove, where to find, damaged/unreadable, not originally present, removed), "Not Present or Removed?" modal, drag between slots (move-to-Other rule), "Move to another slot…" on narrow screens. Item Details + Photos checklist panel. "Add more photos". CTA "Review" → "Please fix the following" → "Confirm security code" | Hand-off card when required photos are missing, also inside the fix modal |
+| 3. Confirm | TEAM / BRAND / SEASON card (season editable, "Override AI-detected season?"). Accordion: Kit type, Gender, Version, Position, Condition (KitLegit's 5 options), Purchase & notes. Suggested badges, auto-advance after 500ms | **Added:** Size (required), Listing text (name & number, description for buyers) with blocked words. Condition is required |
+| 4. Price | — | **Locker:** valuation, price, payout options (partner rule), where it's shown, NFC notice. "List it for free" |
+| Submitted | KitLegit shows its result | **Locker:** "Getting your listing ready" → "It's live!" or "We couldn't list this shirt". The check runs in the background; the seller never sees KitLegit |
+
+Not ported (unused in KitLegit's live flow, or backend-only): StepIndicator, FloatingBottomBar, ConfirmationStep, MismatchDialog, MissingPhotosModal, QualityIssuesModal, PaywallModal, MobileCheckGate, the label-check and country-of-manufacture modals, AI re-classification on replace, adidas tag pairing.
 
 Drafts appear on the app's Home and Sell tabs and in the club store account ("Unfinished listings").
 

@@ -59,7 +59,7 @@ export function PayoutChooser({ order, doneHref, doneLabel }: { order: Order; do
   return (
     <div className="space-y-5">
       <span className="inline-block rounded-full bg-accent/10 px-2.5 py-1 text-[11px] font-semibold text-accent">
-        Delivered · the buyer has it
+        Completed · the buyer has it
       </span>
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Sold! {formatGBP(order.itemPrice)} is yours</h1>

@@ -46,7 +46,7 @@ export default function App() {
         <Route path="listing/:id" element={<ListingDetail />} />
         <Route path="checkout/:id" element={<FanCheckout />} />
         <Route path="orders/:id" element={<OrderDetail />} />
-        <Route path="orders/:id/dispatch" element={<Dispatch />} />
+        <Route path="orders/:id/label" element={<Dispatch />} />
         <Route path="payout/:id" element={<Payout />} />
       </Route>
 

@@ -14,7 +14,7 @@ export function StoreSellStart() {
     if (!user) return;
     const st = getState();
     const empty = st.drafts.find(
-      (d) => d.ownerId === user.id && d.startedOn.clubId === club.id && Object.keys(d.slots).length === 0,
+      (d) => d.ownerId === user.id && d.startedOn.clubId === club.id && d.pool.length === 0 && Object.keys(d.slots).length === 0,
     );
     const id = empty?.id ?? createDraft(user.id, { surface: "store", clubId: club.id });
     navigate(`/store/${club.id}/sell/${id}`, { replace: true });
@@ -38,8 +38,8 @@ export function StoreSell() {
       storeClub={club}
       listingHref={(id) => `/store/${club.id}/account?listing=${id}`}
       accountHref={`/store/${club.id}/account`}
+      exitHref={`/store/${club.id}/account`}
       onSellAnother={() => navigate(`/store/${club.id}/sell`)}
-      onSaveForLater={() => navigate(`/store/${club.id}/account`)}
     />
   );
 }

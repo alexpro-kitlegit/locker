@@ -16,22 +16,22 @@ type SeedListing = [string, Listing["clubId"], Listing["type"], string, Listing[
 
 const LISTINGS: SeedListing[] = [
   ["l-1001", "harbour-city", "Home", "2019/20", "M", "Excellent", 5641, "u-sam", { status: "sold" }],
-  ["l-1002", "harbour-city", "Away", "2021/22", "L", "Good", 3210, "u-priya"],
+  ["l-1002", "harbour-city", "Away", "2021/22", "L", "Average", 3210, "u-priya"],
   ["l-1003", "harbour-city", "Third", "2018/19", "S", "Excellent", 4210, "u-tom"],
-  ["l-1004", "harbour-city", "Home", "1998/99", "XL", "Good", 9100, "u-lena", { description: "Original from the cup run season. Small mark on the hem." }],
-  ["l-1005", "harbour-city", "Home", "2023/24", "M", "Brand new", 4800, "u-marcus", { printing: "REYES 9" }],
+  ["l-1004", "harbour-city", "Home", "1998/99", "XL", "Average", 9100, "u-lena", { description: "Original from the cup run season. Small mark on the hem." }],
+  ["l-1005", "harbour-city", "Home", "2023/24", "M", "New with tags", 4800, "u-marcus", { printing: "REYES 9" }],
   ["l-1006", "harbour-city", "Goalkeeper", "2022/23", "L", "Excellent", 3500, "u-priya"],
   ["l-1007", "harbour-city", "Away", "2008/09", "M", "Excellent", 12500, "u-tom", { nfcTag: "FN-30871" }],
   ["l-1008", "harbour-city", "Away", "2022/23", "M", "Excellent", 4000, "u-sam"],
   ["l-2001", "northgate", "Home", "2022/23", "M", "Excellent", 4500, "u-lena"],
-  ["l-2002", "northgate", "Away", "2020/21", "S", "Good", 3800, "u-marcus"],
+  ["l-2002", "northgate", "Away", "2020/21", "S", "Average", 3800, "u-marcus"],
   ["l-2003", "northgate", "Third", "2019/20", "L", "Excellent", 3300, "u-tom"],
-  ["l-2004", "northgate", "Home", "1995/96", "L", "Good", 14000, "u-priya", { nfcTag: "FN-30112", printing: "MCALLISTER 10" }],
-  ["l-3001", "kingsmere", "Home", "2023/24", "M", "Brand new", 5200, "u-tom"],
-  ["l-3002", "kingsmere", "Away", "2017/18", "XL", "Fair", 2900, "u-lena"],
+  ["l-2004", "northgate", "Home", "1995/96", "L", "Average", 14000, "u-priya", { nfcTag: "FN-30112", printing: "MCALLISTER 10" }],
+  ["l-3001", "kingsmere", "Home", "2023/24", "M", "New with tags", 5200, "u-tom"],
+  ["l-3002", "kingsmere", "Away", "2017/18", "XL", "Poor", 2900, "u-lena"],
   ["l-3003", "kingsmere", "Third", "2021/22", "S", "Excellent", 3600, "u-marcus"],
   // Non-partner clubs: The Locker app only, no club store, no club credit.
-  ["l-4001", "eastbridge", "Home", "2004/05", "L", "Good", 6200, "u-priya"],
+  ["l-4001", "eastbridge", "Home", "2004/05", "L", "Average", 6200, "u-priya"],
   ["l-4002", "millbrook", "Away", "2019/20", "M", "Excellent", 2800, "u-marcus"],
 ];
 
@@ -79,14 +79,14 @@ export function seedState(): LockerState {
         paymentMethod: "pay_by_bank",
         carrier: "inpost",
         dropOff: "InPost Locker · Tesco Extra, Harbour Rd",
-        status: "delivered",
+        status: "completed",
         events: [
           { status: "paid", at: daysAgo(4) },
           { status: "dispatched", at: daysAgo(3, 20) },
           { status: "in_transit", at: daysAgo(3) },
-          { status: "delivered", at: daysAgo(1, 2) },
+          { status: "delivered", at: daysAgo(3, 2) },
+          { status: "completed", at: daysAgo(1, 2) },
         ],
-        dispatchCheckId: "KL-48390",
         tracking: "IP 6620 4417 0921",
         createdAt: daysAgo(4),
       },
@@ -94,6 +94,6 @@ export function seedState(): LockerState {
     drafts: [],
     balances: {},
     credits: [],
-    demo: { nextVerdict: "authentic" },
+    demo: { nextVerdict: "authentic", unsureId: false },
   };
 }

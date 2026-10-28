@@ -32,7 +32,7 @@ export function FanLayout() {
   const { pathname } = useLocation();
   const s = useLocker();
   const walletAlert = s.orders.some(
-    (o) => o.sellerId === s.meId && ((o.status === "delivered" && !o.payout) || o.status === "paid"),
+    (o) => o.sellerId === s.meId && ((o.status === "completed" && !o.payout) || o.status === "paid"),
   );
 
   useEffect(() => {

@@ -11,8 +11,8 @@ const SCRIPT = [
   ["Finish on the phone", "Missing labels? Scan the code to carry on in the App Clip or The Locker app. The phone shows the same draft."],
   ["List it", "Add details, see the valuation, set a price. The KitLegit check runs quietly in the background, then the listing goes live."],
   ["Buy", "Switch the store to Jordan and buy it. Pay by bank is first. The money is held."],
-  ["Send", "Back in the app, Wallet shows To send. Do the dispatch check and get the drop-off QR code."],
-  ["Deliver", "Use the prototype controls to scan and deliver the parcel. The club store order updates too."],
+  ["Send", "Back in the app, Wallet shows To send with a deadline. Get the label: drop-off QR code or print it."],
+  ["Deliver", "Use the prototype controls to scan and deliver the parcel. The buyer has 48 hours to check it (or taps All good), then the order completes."],
   ["Get paid", "Partner club shirt: 110% club credit, Locker balance or cash. Non-partner club shirt: Locker balance or cash."],
 ];
 
@@ -97,7 +97,7 @@ export function Hub() {
               ))}
             </ol>
             <p className="mt-4 text-sm text-neutral-500">
-              Shortcut: Sam already has a delivered sale (£56.41), so Wallet opens straight onto the payout choice.
+              Shortcut: Sam already has a completed sale (£56.41), so Wallet opens straight onto the payout choice.
             </p>
           </div>
 

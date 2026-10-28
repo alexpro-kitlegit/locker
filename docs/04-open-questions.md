@@ -27,9 +27,9 @@
 1. **Buyer fee = 5% + 70p.** Worked out from the PDF's screens (£56.41 shows as £59.93). The money slide implies roughly £3.94 a sale on a £30 shirt, which doesn't match. Which is right?
 2. ~~Club credit goes to the seller's own club.~~ **Decided:** credit is at the shirt's club if it's a partner. Otherwise Locker balance or cash.
 3. **The payout is chosen after delivery**, on the "Sold!" screen. Workaround 2 in the PDF says "at the moment of sale". Should the seller pre-pick it when the shirt sells?
-4. **Dispatch check = 2 photos** (front + wash label), matched by KitLegit to the listing check. Is that technically possible today, and is it the 14p check the cost model assumes?
+4. ~~Dispatch check on the seller side~~ **Decided:** not a seller step. It moves to the buyer side, to be designed later.
 5. ~~Accounts~~ **Proposed:** one Locker account, linked to the club's Shopify or SSO account where possible (see [accounts](06-accounts.md)). Is guest checkout still allowed for buyers?
-6. **When the money is released:** on the carrier's "delivered" scan, or after a buyer window (Vinted gives 2 days)?
+6. ~~When the money is released~~ **Decided:** 48 hours after delivery, unless the buyer reports a problem.
 7. **Counterfeit result:** the check is free for the seller, the result goes to Back Four, and the seller can ask for a KitLegit manual review. What are the legal basis and consent for sharing with Back Four? Who pays for the manual review?
 8. **Sold shirts stay visible** in club stores as social proof.
 9. **Seller ships within 3 days**, otherwise the order is cancelled and the buyer refunded. The number is a placeholder.
@@ -44,3 +44,8 @@
 15. **Valuation:** is there enough KitLegit price data per shirt at launch? What's the fallback when there are few sales?
 16. **Drafts:** how long do unfinished listings and their photos stay?
 17. **Background check time:** the prototype takes about 8 seconds. What's the real target, and do we email or push when it's live?
+
+## Key decision points (raise before the flowchart is final)
+
+- ★ **Locker balance and club credit as e-money.** Stripe's 90-day payout limit and the e-money rules. Being looked into.
+- **Messages:** free-text questions with guardrails, or offers plus structured questions only (see [seller journey](07-seller-journey.md#recommendation-on-messages)).

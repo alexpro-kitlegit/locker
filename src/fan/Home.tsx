@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { ListingCard } from "../components/ListingCard";
 import { Crest, SectionTitle } from "../components/ui";
 import { getClub, PARTNER_CLUBS } from "../data/clubs";
-import { DraftRow } from "./Sell";
+import { DraftRow, hasContent } from "./Sell";
 import { firstName } from "../lib/format";
 import { useLocker } from "../lib/store";
 
@@ -13,7 +13,7 @@ export function Home() {
   const myClub = getClub(me.clubId)!;
   const live = s.listings.filter((l) => l.status === "live" && l.sellerId !== s.meId);
   const fromMyClub = live.filter((l) => l.clubId === myClub.id);
-  const drafts = s.drafts.filter((d) => d.ownerId === s.meId && Object.keys(d.slots).length > 0);
+  const drafts = s.drafts.filter((d) => d.ownerId === s.meId && hasContent(d));
   const newest = [...live].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 6);
 
   return (

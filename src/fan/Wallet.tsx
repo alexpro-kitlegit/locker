@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { ShirtTile } from "../components/ListingCard";
 import { Crest, SectionTitle } from "../components/ui";
 import { getClub } from "../data/clubs";
-import { formatDate, shirtTitle } from "../lib/format";
+import { formatDate, sendBy, shirtTitle } from "../lib/format";
 import { formatGBP } from "../lib/pricing";
 import { useLocker } from "../lib/store";
 import type { Order } from "../lib/types";
@@ -11,9 +11,9 @@ import type { Order } from "../lib/types";
 export function WalletPage() {
   const s = useLocker();
   const sales = s.orders.filter((o) => o.sellerId === s.meId);
-  const ready = sales.filter((o) => o.status === "delivered" && !o.payout);
+  const ready = sales.filter((o) => o.status === "completed" && !o.payout);
   const toSend = sales.filter((o) => o.status === "paid");
-  const moving = sales.filter((o) => o.status === "dispatched" || o.status === "in_transit");
+  const moving = sales.filter((o) => o.status === "dispatched" || o.status === "in_transit" || o.status === "delivered");
   const pending = [...toSend, ...moving].reduce((sum, o) => sum + o.itemPrice, 0);
   const paidOut = sales.filter((o) => o.payout);
   const credits = s.credits.filter((c) => sales.some((o) => o.id === c.orderId));
@@ -49,7 +49,7 @@ export function WalletPage() {
           <SectionTitle>To send</SectionTitle>
           <div className="space-y-2">
             {toSend.map((o) => (
-              <OrderRow key={o.id} order={o} to={`/app/orders/${o.id}`} note="Sold! Send within 3 days" icon={<Package className="h-4 w-4" />} />
+              <OrderRow key={o.id} order={o} to={`/app/orders/${o.id}`} note={`Sold! Send by ${sendBy(o.createdAt)}`} icon={<Package className="h-4 w-4" />} />
             ))}
           </div>
         </section>
@@ -60,7 +60,7 @@ export function WalletPage() {
           <SectionTitle>On the way</SectionTitle>
           <div className="space-y-2">
             {moving.map((o) => (
-              <OrderRow key={o.id} order={o} to={`/app/orders/${o.id}`} note={o.status === "dispatched" ? "Dropped off" : "In transit"} icon={<Truck className="h-4 w-4" />} />
+              <OrderRow key={o.id} order={o} to={`/app/orders/${o.id}`} note={o.status === "dispatched" ? "Dropped off" : o.status === "in_transit" ? "In transit" : "Delivered, buyer has 48 hours to check it"} icon={<Truck className="h-4 w-4" />} />
             ))}
           </div>
         </section>

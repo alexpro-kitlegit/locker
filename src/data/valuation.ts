@@ -1,7 +1,7 @@
 import type { Condition, ShirtType, Size } from "../lib/types";
 
 // Stand-in for a valuation built from KitLegit's data (purchase prices on checks, plus Locker sale prices).
-const CONDITION_FACTOR: Record<Condition, number> = { "Brand new": 1.15, Excellent: 1, Good: 0.85, Fair: 0.65 };
+const CONDITION_FACTOR: Record<Condition, number> = { "New with tags": 1.2, "New without tags": 1.1, Excellent: 1, Average: 0.82, Poor: 0.6 };
 const SIZE_FACTOR: Partial<Record<Size, number>> = { XS: 0.9, XXL: 0.95 };
 
 export interface Valuation {

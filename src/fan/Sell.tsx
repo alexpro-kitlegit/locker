@@ -1,13 +1,14 @@
 import { ChevronRight, Plus } from "lucide-react";
 import { useEffect } from "react";
 import { Link, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
-import { ShirtArt } from "../components/ShirtArt";
 import { SellFlow } from "../components/sell/SellFlow";
 import { Button, SectionTitle } from "../components/ui";
 import { getClub } from "../data/clubs";
-import { mandatorySlots } from "../data/slots";
+import { blockers } from "../components/sell/flow";
+import { PhotoView } from "../components/sell/PhotoGuide";
+import { kitFor } from "../components/sell/UploadStep";
 import { createDraft, setAppUser } from "../lib/actions";
-import { formatDate, shirtTitle } from "../lib/format";
+import { formatDate } from "../lib/format";
 import { getState, useLocker } from "../lib/store";
 import type { Draft } from "../lib/types";
 
@@ -16,12 +17,12 @@ export function Sell() {
   const s = useLocker();
   const navigate = useNavigate();
   const { key } = useLocation();
-  const drafts = s.drafts.filter((d) => d.ownerId === s.meId && Object.keys(d.slots).length > 0);
+  const drafts = s.drafts.filter((d) => d.ownerId === s.meId && hasContent(d));
 
   const start = () => {
     // Read fresh state: StrictMode runs the auto-start effect twice, and we want one draft.
     const st = getState();
-    const empty = st.drafts.find((d) => d.ownerId === st.meId && Object.keys(d.slots).length === 0);
+    const empty = st.drafts.find((d) => d.ownerId === st.meId && !hasContent(d));
     const id = empty?.id ?? createDraft(st.meId, { surface: "app" });
     navigate(`/app/sell/${id}`);
   };
@@ -71,30 +72,41 @@ export function SellDraft() {
       surface="app"
       listingHref={(id) => `/app/listing/${id}`}
       accountHref="/app/me"
+      exitHref="/app"
       onSellAnother={() => navigate("/app/sell")}
     />
   );
 }
 
+/** A draft has something in it once it has photos (still in the upload pool, or sorted into slots). */
+export const hasContent = (d: Draft) => d.pool.length > 0 || Object.keys(d.slots).length > 0;
+
+const STEP_LABEL: Record<Draft["step"], string> = {
+  upload: "Photos",
+  season: "Confirm the season",
+  review: "Check photos",
+  confirm: "Details",
+  price: "Price",
+};
+
 export function DraftRow({ draft, to }: { draft: Draft; to: string }) {
-  const club = getClub(draft.shirt?.clubId);
-  const required = club && draft.shirt ? mandatorySlots(club, draft.shirt.season) : ["front", "back", "wash-label"];
-  const done = required.filter((r) => draft.slots[r as keyof Draft["slots"]]).length;
+  const id = draft.identified;
+  const club = getClub(id?.clubId);
+  const front = draft.slots.front?.photo ?? draft.pool[0];
+  const photos = draft.pool.length + Object.values(draft.slots).filter((x) => x?.photo).length;
+  const missing = id ? blockers(draft).filter((b) => b.missingPhoto).length : 0;
   const startedIn = draft.startedOn.surface === "store" ? `the ${getClub(draft.startedOn.clubId)?.name} store` : "The Locker app";
 
   return (
     <Link to={to} className="flex items-center gap-3 rounded-2xl border border-accent/40 bg-accent/5 p-3">
-      <span className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-tile">
-        {draft.slots.front?.thumb ? (
-          <img src={draft.slots.front.thumb} alt="" className="h-full w-full rounded-xl object-cover" />
-        ) : club && draft.shirt ? (
-          <ShirtArt kit={club.kits[draft.shirt.type]} className="h-10 w-10" />
-        ) : null}
+      <span className="h-14 w-14 shrink-0 overflow-hidden rounded-xl">
+        {front ? <PhotoView photo={front} kit={club?.kits[id!.type] ?? kitFor(draft.demoShirt)} /> : <span className="block h-full bg-tile" />}
       </span>
       <div className="min-w-0 flex-1 text-sm">
-        <p className="truncate font-semibold">{club && draft.shirt ? `${club.name} ${shirtTitle(draft.shirt)}` : "New listing"}</p>
+        <p className="truncate font-semibold">{club && id ? `${club.name} ${id.type}${id.season ? ` ${id.season}` : ""}` : "New listing"}</p>
         <p className="text-xs text-neutral-500">
-          {done} of {required.length} required photos · started in {startedIn} · {formatDate(draft.updatedAt)}
+          {STEP_LABEL[draft.step]} · {missing > 0 ? `${missing} required photo${missing > 1 ? "s" : ""} to go` : `${photos} photos`} · started in {startedIn} ·{" "}
+          {formatDate(draft.updatedAt)}
         </p>
       </div>
       <ChevronRight className="h-4 w-4 text-neutral-400" />

@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { ShirtTile } from "../components/ListingCard";
 import { OrderTimeline } from "../components/OrderTimeline";
 import { LockerLogo, TickCircle } from "../components/ui";
-import { firstName, shirtTitle } from "../lib/format";
+import { firstName, sendBy, shirtTitle } from "../lib/format";
 import { CARRIERS, formatGBP } from "../lib/pricing";
 import { useLocker } from "../lib/store";
 import { useClub } from "./StoreLayout";
@@ -24,11 +24,11 @@ export function StoreOrder() {
       <div className="space-y-2 text-center">
         <TickCircle size="lg" tone="accent" className="mx-auto" />
         <h1 className="text-2xl font-bold">
-          {order.status === "delivered" ? "It's arrived" : `Thanks, ${firstName(buyer.name)}`}
+          {order.status === "delivered" || order.status === "completed" ? "It's arrived" : `Thanks, ${firstName(buyer.name)}`}
         </h1>
         <p className="text-sm text-neutral-500">
           Order {order.id}.{" "}
-          {order.status === "paid" ? `${firstName(seller.name)} has 3 days to send it.` : `Sent with ${CARRIERS[order.carrier].name}.`}
+          {order.status === "paid" ? `${firstName(seller.name)} will send it by ${sendBy(order.createdAt)}.` : `Sent with ${CARRIERS[order.carrier].name}.`}
         </p>
       </div>
 
@@ -51,7 +51,7 @@ export function StoreOrder() {
       <div className="flex gap-3 rounded-2xl bg-ink p-4 text-sm text-white">
         <ShieldCheck className="h-5 w-5 shrink-0" />
         <p>
-          {order.status === "delivered"
+          {order.status === "completed"
             ? `KitLegit certificate ${listing.check.certificate} is now in your name.`
             : `We hold your money until it arrives. Then KitLegit certificate ${listing.check.certificate} moves to you.`}
         </p>
