@@ -198,13 +198,49 @@ export interface Order {
   createdAt: string;
 }
 
+/**
+ * Sale money in the seller's wallet. It lands here by default when an order completes. The seller can spend it in
+ * The Locker, swap it for club credit or withdraw it. Whatever is left moves to their bank 90 days after it arrived.
+ */
+export interface WalletEntry {
+  id: string;
+  userId: string;
+  orderId: string;
+  /** What arrived, in pence. */
+  amount: number;
+  /** Not yet spent or moved out. */
+  remaining: number;
+  receivedAt: string;
+  autoTransferAt: string;
+  /** The seller has seen the "it's in your wallet" choice. */
+  reviewed: boolean;
+  /** Set when this sale's money was moved out in one go from its "just arrived" screen. */
+  movedTo?: "club_credit" | "bank";
+  /** The shirt's club, if it's a partner: this money can become that club's credit. */
+  creditClubId?: string;
+}
+
 export interface ClubCredit {
   id: string;
+  userId: string;
   clubId: string;
   code: string;
   amount: number;
-  orderId: string;
   issuedAt: string;
+}
+
+/** Money moved out of the wallet: to club credit (110%) or to the bank (5% + 50p fee), or automatically after 90 days. */
+export interface WalletMove {
+  id: string;
+  userId: string;
+  to: "club_credit" | "bank";
+  clubId?: string;
+  /** Taken from the wallet, in pence. */
+  amount: number;
+  /** What the seller gets: credit value, or cash after the fee. */
+  received: number;
+  code?: string;
+  at: string;
 }
 
 export interface LockerState {
@@ -216,8 +252,8 @@ export interface LockerState {
   listings: Listing[];
   drafts: Draft[];
   orders: Order[];
-  /** "Spend in The Locker" balance per user, in pence. */
-  balances: Record<string, number>;
+  wallet: WalletEntry[];
+  walletMoves: WalletMove[];
   /** Club credit codes. The owner is the seller on the linked order. */
   credits: ClubCredit[];
   demo: { nextVerdict: "authentic" | "counterfeit"; unsureId: boolean };

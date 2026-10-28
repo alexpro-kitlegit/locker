@@ -1,8 +1,8 @@
 import { getClub } from "../data/clubs";
-import { payoutOptions } from "./payouts";
-import { buyerFee, CARRIERS, NFC_THRESHOLD } from "./pricing";
+import { buyerFee, CARRIERS, NFC_THRESHOLD, payoutAmount } from "./pricing";
 import { getState, setState } from "./store";
-import type { Carrier, Draft, Listing, Order, OrderStatus, PaymentMethod, PayoutMethod, ShirtType } from "./types";
+import { newEntry, spend } from "./wallet";
+import type { Carrier, Draft, Listing, Order, OrderStatus, PaymentMethod, PayoutMethod, ShirtType, WalletMove, LockerState } from "./types";
 
 const now = () => new Date().toISOString();
 const digits = (n: number) => Array.from({ length: n }, () => Math.floor(Math.random() * 10)).join("");
@@ -129,15 +129,11 @@ export function placeOrder(input: {
       events: [{ status: "paid", at: now() }],
       createdAt: now(),
     };
-    const balances =
-      input.paymentMethod === "locker_balance"
-        ? { ...s.balances, [input.buyerId]: (s.balances[input.buyerId] ?? 0) - total }
-        : s.balances;
     return {
       ...s,
       orders: [order, ...s.orders],
       listings: s.listings.map((l) => (l.id === listing.id ? { ...l, status: "sold" } : l)),
-      balances,
+      wallet: input.paymentMethod === "locker_balance" ? spend(s.wallet, input.buyerId, total) : s.wallet,
     };
   });
   return id;
@@ -159,41 +155,79 @@ export function dispatchOrder(orderId: string) {
 
 const NEXT: Partial<Record<OrderStatus, OrderStatus>> = { dispatched: "in_transit", in_transit: "delivered", delivered: "completed" };
 
-/** Prototype control: stands in for ShipStation tracking webhooks. */
-export function advanceOrder(orderId: string) {
-  updateOrder(orderId, (o) => {
-    const next = NEXT[o.status];
-    return next ? { ...o, status: next, events: [...o.events, { status: next, at: now() }] } : o;
+/** Moves an order on. Completing it releases the money into the seller's wallet (the default). */
+function moveOrder(orderId: string, to: OrderStatus) {
+  setState((s) => {
+    const order = s.orders.find((o) => o.id === orderId)!;
+    const orders = s.orders.map((o) => (o.id === orderId ? { ...o, status: to, events: [...o.events, { status: to, at: now() }] } : o));
+    const credit = to === "completed" && !s.wallet.some((e) => e.orderId === orderId);
+    const shirtClub = getClub(s.listings.find((l) => l.id === order.listingId)!.clubId)!;
+    const entry = newEntry(order.sellerId, orderId, order.itemPrice, new Date(), shirtClub.partner ? shirtClub.id : undefined);
+    return { ...s, orders, wallet: credit ? [entry, ...s.wallet] : s.wallet };
   });
+}
+
+/** Prototype control: stands in for ShipStation tracking webhooks and the 48-hour window ending. */
+export function advanceOrder(orderId: string) {
+  const next = NEXT[getState().orders.find((o) => o.id === orderId)!.status];
+  if (next) moveOrder(orderId, next);
 }
 
 /** The buyer says it's all good before the 48 hours are up. */
 export function confirmReceived(orderId: string) {
-  updateOrder(orderId, (o) => (o.status === "delivered" ? { ...o, status: "completed", events: [...o.events, { status: "completed", at: now() }] } : o));
+  if (getState().orders.find((o) => o.id === orderId)?.status === "delivered") moveOrder(orderId, "completed");
 }
 
-export function choosePayout(orderId: string, method: PayoutMethod) {
-  const s = getState();
-  const order = s.orders.find((o) => o.id === orderId)!;
-  const listing = s.listings.find((l) => l.id === order.listingId)!;
-  const option = payoutOptions(order.itemPrice, listing.clubId).find((o) => o.method === method)!;
-  const club = option.club;
-  const creditCode = club ? `${club.initials}-${code(4)}-${code(4)}` : undefined;
+function makeMove(userId: string, amount: number, to: "club_credit" | "bank", clubId?: string): WalletMove {
+  const club = to === "club_credit" ? getClub(clubId)! : undefined;
+  return {
+    id: `wm-${digits(6)}`,
+    userId,
+    to,
+    clubId: club?.id,
+    amount,
+    received: payoutAmount(amount, to),
+    code: club ? `${club.initials}-${code(4)}-${code(4)}` : undefined,
+    at: now(),
+  };
+}
 
-  setState((st) => ({
-    ...st,
-    orders: st.orders.map((o) =>
-      o.id === orderId ? { ...o, payout: { method, amount: option.amount, clubId: club?.id, code: creditCode, at: now() } } : o,
+const withMove = (s: LockerState, move: WalletMove): LockerState => ({
+  ...s,
+  walletMoves: [move, ...s.walletMoves],
+  credits: move.code
+    ? [{ id: `cc-${digits(6)}`, userId: move.userId, clubId: move.clubId!, code: move.code, amount: move.received, issuedAt: move.at }, ...s.credits]
+    : s.credits,
+});
+
+/**
+ * Moves money out of the wallet: to a partner club's credit at 110% (only money from that club's shirts), or to the
+ * bank with the 5% + 50p fee. The seller can do this as often as they like, so any split works.
+ */
+export function moveMoney(userId: string, amount: number, to: "club_credit" | "bank", clubId?: string): WalletMove {
+  const move = makeMove(userId, amount, to, clubId);
+  setState((s) => withMove({ ...s, wallet: spend(s.wallet, userId, amount, move.clubId) }, move));
+  return move;
+}
+
+/** The "Sold! £x is in your wallet" shortcut for one sale: keep it (the default), or move that sale's money in one go. */
+export function choosePayout(orderId: string, method: PayoutMethod) {
+  const entry = getState().wallet.find((e) => e.orderId === orderId)!;
+  if (method === "locker_balance") {
+    setState((s) => ({ ...s, wallet: s.wallet.map((e) => (e.id === entry.id ? { ...e, reviewed: true } : e)) }));
+    return;
+  }
+  const move = makeMove(entry.userId, entry.remaining, method, entry.creditClubId);
+  setState((s) =>
+    withMove(
+      {
+        ...s,
+        wallet: s.wallet.map((e) => (e.id === entry.id ? { ...e, remaining: 0, reviewed: true, movedTo: method } : e)),
+        orders: s.orders.map((o) => (o.id === orderId ? { ...o, payout: { method, amount: move.received, clubId: move.clubId, code: move.code, at: move.at } } : o)),
+      },
+      move,
     ),
-    balances:
-      method === "locker_balance"
-        ? { ...st.balances, [order.sellerId]: (st.balances[order.sellerId] ?? 0) + option.amount }
-        : st.balances,
-    credits:
-      club && creditCode
-        ? [{ id: `cc-${digits(6)}`, clubId: club.id, code: creditCode, amount: option.amount, orderId, issuedAt: now() }, ...st.credits]
-        : st.credits,
-  }));
+  );
 }
 
 export function setNextVerdict(verdict: "authentic" | "counterfeit") {

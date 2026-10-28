@@ -1,4 +1,5 @@
 import { Navigate, useParams } from "react-router-dom";
+import { MoveMoney } from "../components/MoveMoney";
 import { PayoutChooser } from "../components/PayoutChooser";
 import { useLocker } from "../lib/store";
 import { useStore } from "./StoreLayout";
@@ -13,6 +14,16 @@ export function StorePayout() {
   return (
     <div className="mx-auto max-w-lg px-4 py-8 sm:px-6">
       <PayoutChooser order={order} doneHref={`/store/${club.id}/account`} doneLabel="Back to your account" />
+    </div>
+  );
+}
+
+export function StoreWalletMove() {
+  const { club, user } = useStore();
+  if (!user) return <Navigate to={`/store/${club.id}`} replace />;
+  return (
+    <div className="mx-auto max-w-lg px-4 py-8 sm:px-6">
+      <MoveMoney userId={user.id} doneHref={`/store/${club.id}/account`} doneLabel="Back to your account" />
     </div>
   );
 }

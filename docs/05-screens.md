@@ -18,7 +18,8 @@ What's built so far, what each screen needs for real, and what it touches. Route
 | Checkout | `/app/checkout/:id` | Shared checkout (see below), plus Locker balance as a payment method | Stripe, ShipStation rates | orders |
 | Order | `/app/orders/:id` | Buyer or seller view: tracking, send CTA, payout CTA, certificate transfer, message, report a problem | ShipStation tracking, Supabase Realtime chat, Help Scout | orders, shipments, disputes |
 | **Dispatch** | `/app/orders/:id/dispatch` | Dispatch check (2 photos matched to the listing check), then the drop-off QR code | KitLegit (match), ShipStation (QR label) | orders, shipments, checks |
-| **Payout** | `/app/payout/:id` | PDF "Sold! £x is yours": club credit 110% / Locker balance / bank, then a gift card code | Shopify gift cards or club codes; Stripe Connect payouts | payouts, club_credit_issuances, wallet_ledger |
+| **Payout** | `/app/payout/:id` | "Sold! £x is in your wallet": keep it (default), or move this sale's money in one go to club credit or the bank. Shows the 90-day auto-transfer date | Stripe Connect, Shopify gift cards | wallet_entries, wallet_moves |
+| **Move money** | `/app/wallet/move` (and `/store/:club/wallet/move`) | Pooled wallet: amount + destination (each partner club's credit, capped per club, or bank). Repeat to split | Stripe Connect payouts, gift cards | wallet_moves, club_credits |
 | Wallet | `/app/wallet` | Locker balance, held money, ready to pay out, to send, on the way, club credit codes, history | Stripe Connect balances | payouts, wallet_ledger |
 | Me | `/app/me` | Profile, your club, your listings, purchases, identity (Stripe), payout bank, notifications, help | Stripe Connect onboarding | profiles |
 

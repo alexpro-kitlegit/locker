@@ -66,16 +66,16 @@ export function OrderDetail() {
 
         {selling && order.status === "delivered" && deliveredAt && (
           <p className="rounded-2xl bg-locker-soft p-4 text-sm">
-            <span className="font-semibold">Delivered.</span> {firstName(other.name)} has 48 hours to check it. You can
-            choose how you're paid from {releaseAt(deliveredAt)}.
+            <span className="font-semibold">Delivered.</span> {firstName(other.name)} has 48 hours to check it. The money lands
+            in your wallet on {releaseAt(deliveredAt)}.
           </p>
         )}
 
         {selling && order.status === "completed" && !order.payout && (
           <div className="space-y-3 rounded-2xl bg-locker-soft p-4">
-            <p className="font-semibold">Completed. Your money is ready.</p>
+            <p className="font-semibold">Completed. {formatGBP(order.itemPrice)} is in your wallet.</p>
             <Button block onClick={() => navigate(`/app/payout/${order.id}`)}>
-              Choose how you're paid
+              Keep it or move it
             </Button>
           </div>
         )}

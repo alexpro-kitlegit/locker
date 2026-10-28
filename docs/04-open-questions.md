@@ -49,3 +49,9 @@
 
 - ★ **Locker balance and club credit as e-money.** Stripe's 90-day payout limit and the e-money rules. Being looked into.
 - **Messages:** free-text questions with guardrails, or offers plus structured questions only (see [seller journey](07-seller-journey.md#recommendation-on-messages)).
+
+## From the wallet (v0.4)
+
+18. **Fee on the automatic 90-day transfer.** Free, or the usual 5% + 50p bank fee? The prototype only shows the date.
+19. **Club credit from the wallet:** only the shirt's club (current, as decided earlier), or let sellers put any of it into one partner club (e.g. their favourite)? Simpler for fans, but the club whose shirt sold doesn't get the credit.
+20. **Minimum amount** for a bank withdrawal or credit swap?

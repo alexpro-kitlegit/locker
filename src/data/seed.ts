@@ -1,4 +1,5 @@
 import { buyerFee, CARRIERS } from "../lib/pricing";
+import { newEntry } from "../lib/wallet";
 import type { Listing, LockerState, User } from "../lib/types";
 
 const daysAgo = (d: number, h = 0) => new Date(Date.now() - (d * 24 + h) * 3600_000).toISOString();
@@ -33,6 +34,8 @@ const LISTINGS: SeedListing[] = [
   // Non-partner clubs: The Locker app only, no club store, no club credit.
   ["l-4001", "eastbridge", "Home", "2004/05", "L", "Average", 6200, "u-priya"],
   ["l-4002", "millbrook", "Away", "2019/20", "M", "Excellent", 2800, "u-marcus"],
+  ["l-1009", "millbrook", "Home", "2016/17", "M", "Excellent", 2800, "u-sam", { status: "sold" }],
+  ["l-1010", "northgate", "Away", "2021/22", "M", "Excellent", 3400, "u-sam", { status: "sold" }],
 ];
 
 export function seedState(): LockerState {
@@ -54,10 +57,18 @@ export function seedState(): LockerState {
     };
   });
 
-  // Sam's Home 2019/20 sold in the Harbour City store and has been delivered: the PDF's "Sold! £56.41 is yours" screen.
+  // Sam's Home 2019/20 sold in the Harbour City store and completed yesterday: the money has just landed in Sam's
+  // wallet, and the PDF's "Sold! £56.41" choice is waiting.
   const sold = listings[0];
   const fee = buyerFee(sold.price);
   const postage = CARRIERS.inpost.price;
+  // An older sale (a non-partner club's shirt, so no club credit): in the wallet for 63 days, 27 left before it
+  // moves to Sam's bank automatically.
+  const older = listings.find((l) => l.id === "l-1009")!;
+  const olderFee = buyerFee(older.price);
+  // And a Northgate shirt three weeks ago: Sam's wallet holds money from three sales and two partner clubs.
+  const rovers = listings.find((l) => l.id === "l-1010")!;
+  const roversFee = buyerFee(rovers.price);
 
   return {
     meId: "u-sam",
@@ -83,16 +94,70 @@ export function seedState(): LockerState {
         events: [
           { status: "paid", at: daysAgo(4) },
           { status: "dispatched", at: daysAgo(3, 20) },
-          { status: "in_transit", at: daysAgo(3) },
+          { status: "in_transit", at: daysAgo(3, 10) },
           { status: "delivered", at: daysAgo(3, 2) },
           { status: "completed", at: daysAgo(1, 2) },
         ],
         tracking: "IP 6620 4417 0921",
         createdAt: daysAgo(4),
       },
+      {
+        id: "LK-19870",
+        listingId: older.id,
+        buyerId: "u-priya",
+        sellerId: "u-sam",
+        channel: "app",
+        itemPrice: older.price,
+        fee: olderFee,
+        postage: CARRIERS.evri.price,
+        total: older.price + olderFee + CARRIERS.evri.price,
+        paymentMethod: "card",
+        carrier: "evri",
+        dropOff: "Evri ParcelShop · Costcutter, Mill Lane",
+        status: "completed",
+        events: [
+          { status: "paid", at: daysAgo(70) },
+          { status: "dispatched", at: daysAgo(69) },
+          { status: "in_transit", at: daysAgo(68) },
+          { status: "delivered", at: daysAgo(66) },
+          { status: "completed", at: daysAgo(63) },
+        ],
+        tracking: "EV 2291 0473 5518",
+        createdAt: daysAgo(70),
+      },
+      {
+        id: "LK-20102",
+        listingId: rovers.id,
+        buyerId: "u-marcus",
+        sellerId: "u-sam",
+        channel: "club",
+        clubId: "northgate",
+        itemPrice: rovers.price,
+        fee: roversFee,
+        postage: CARRIERS.inpost.price,
+        total: rovers.price + roversFee + CARRIERS.inpost.price,
+        paymentMethod: "pay_by_bank",
+        carrier: "inpost",
+        dropOff: "InPost Locker · Tesco Extra, Harbour Rd",
+        status: "completed",
+        events: [
+          { status: "paid", at: daysAgo(27) },
+          { status: "dispatched", at: daysAgo(26) },
+          { status: "in_transit", at: daysAgo(25, 12) },
+          { status: "delivered", at: daysAgo(23) },
+          { status: "completed", at: daysAgo(21) },
+        ],
+        tracking: "IP 7713 0286 4490",
+        createdAt: daysAgo(27),
+      },
     ],
     drafts: [],
-    balances: {},
+    wallet: [
+      newEntry("u-sam", "LK-20417", sold.price, new Date(daysAgo(1, 2)), "harbour-city"),
+      { ...newEntry("u-sam", "LK-20102", rovers.price, new Date(daysAgo(21)), "northgate"), reviewed: true },
+      { ...newEntry("u-sam", "LK-19870", older.price, new Date(daysAgo(63))), reviewed: true },
+    ],
+    walletMoves: [],
     credits: [],
     demo: { nextVerdict: "authentic", unsureId: false },
   };

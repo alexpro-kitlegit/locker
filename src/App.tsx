@@ -12,6 +12,7 @@ import { Payout } from "./fan/Payout";
 import { Search } from "./fan/Search";
 import { Sell, SellDraft } from "./fan/Sell";
 import { WalletPage } from "./fan/Wallet";
+import { WalletMovePage } from "./fan/WalletMove";
 import { DemoSplit } from "./pages/DemoSplit";
 import { Hub } from "./pages/Hub";
 import { StoreAccount } from "./store/StoreAccount";
@@ -20,7 +21,7 @@ import { StoreHome } from "./store/StoreHome";
 import { StoreItem } from "./store/StoreItem";
 import { StoreLayout } from "./store/StoreLayout";
 import { StoreOrder } from "./store/StoreOrder";
-import { StorePayout } from "./store/StorePayout";
+import { StorePayout, StoreWalletMove } from "./store/StorePayout";
 import { StoreSell, StoreSellStart } from "./store/StoreSell";
 
 export default function App() {
@@ -42,6 +43,7 @@ export default function App() {
         <Route path="sell" element={<Sell />} />
         <Route path="sell/:draftId" element={<SellDraft />} />
         <Route path="wallet" element={<WalletPage />} />
+        <Route path="wallet/move" element={<WalletMovePage />} />
         <Route path="me" element={<Me />} />
         <Route path="listing/:id" element={<ListingDetail />} />
         <Route path="checkout/:id" element={<FanCheckout />} />
@@ -60,6 +62,7 @@ export default function App() {
         <Route path="sell/:draftId" element={<StoreSell />} />
         <Route path="account" element={<StoreAccount />} />
         <Route path="payout/:orderId" element={<StorePayout />} />
+        <Route path="wallet/move" element={<StoreWalletMove />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

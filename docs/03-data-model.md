@@ -57,6 +57,14 @@ The prototype's shapes are in [`src/lib/types.ts`](../src/lib/types.ts). Points 
 - **Payout rule:** club credit is issued at the **shirt's** club, only if it's a partner. The seller's favourite club doesn't affect it. Otherwise: Locker balance or cash.
 - **Balances are per user** (ledger-based, like `token_ledger`).
 
+## Learned from the wallet (v0.4)
+
+- **`wallet_entries`**: one per completed sale. user, order, amount, remaining, received_at, auto_transfer_at (+90 days), credit_club_id (the shirt's club if it's a partner), reviewed. The balance is the sum of `remaining`.
+- **`wallet_moves`**: money moved out. user, to (club_credit / bank / auto_bank), club, amount taken, amount received (110% credit or after the fee), credit code, at.
+- **Spending rule:** for club credit, only that club's money. Otherwise non-creditable money first, then the oldest (closest to its auto transfer).
+- **Auto transfer job:** a daily job pays out any entry past `auto_transfer_at` to the seller's bank (Stripe Connect payout).
+- **`club_credits`** now belong to a user and may come from several sales (no longer one order each).
+
 ## Pricing rules seen so far
 
 - Buyer pays one all-in price: item + our fee + postage (+ protection?).

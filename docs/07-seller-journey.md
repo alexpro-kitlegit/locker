@@ -19,7 +19,11 @@ The seller journey as agreed, then everything else it depends on: missing steps,
 | Buyer acceptance window | **48 hours** after delivery, then the order completes and the money is released |
 | Disputes | Yes: not received, damaged, not as described, wrong shirt, "it's fake". A person decides each one |
 | Labels | Created on payment. QR code or PDF to print, emailed and re-downloadable. "No printer" preference |
-| Locker balance / e-money | Being looked into. **Key decision point**, raise again before the flowchart is final |
+| Where sale money goes | **Into the seller's wallet by default** when the order completes (48 hours after delivery) |
+| Wallet | **One pooled balance** across all sales. Spend it in The Locker, or **Move money** any time, as often as you like: all or part to club credit (110%) or to the bank (5% + 50p). Any split works |
+| Club credit from the wallet | Only in the shop of the club whose shirt was sold (partner clubs only), capped at the money from that club's shirts. Bank withdrawals use non-partner money first, so the 110% option is kept |
+| 90-day rule | Whatever is left moves to the seller's bank **automatically 90 days after it arrived** (Stripe Connect's limit). Each sale's money shows its own date |
+| Locker balance / e-money | Being looked into. **Key decision point**, raise again before the flowchart is final. The 90-day auto transfer keeps balances inside Stripe's rules |
 | Dispatch check | **Not a seller step.** It belongs to the buyer side and will be designed later. The seller just gets the label |
 | Already-certified shirts | Yes. Owned by someone else → blocked. Owned by the seller → re-list without a new check |
 | Failed checks | **3 failures in a row → account temporarily on hold** while we investigate |

@@ -13,7 +13,7 @@ const SCRIPT = [
   ["Buy", "Switch the store to Jordan and buy it. Pay by bank is first. The money is held."],
   ["Send", "Back in the app, Wallet shows To send with a deadline. Get the label: drop-off QR code or print it."],
   ["Deliver", "Use the prototype controls to scan and deliver the parcel. The buyer has 48 hours to check it (or taps All good), then the order completes."],
-  ["Get paid", "Partner club shirt: 110% club credit, Locker balance or cash. Non-partner club shirt: Locker balance or cash."],
+  ["Get paid", "When the order completes, the money lands in the wallet. Move money any time: split it between 110% club credit (per club, from that club's shirts) and the bank. What's left goes to the bank automatically after 90 days."],
 ];
 
 const NEXT = [
@@ -97,7 +97,7 @@ export function Hub() {
               ))}
             </ol>
             <p className="mt-4 text-sm text-neutral-500">
-              Shortcut: Sam already has a completed sale (£56.41), so Wallet opens straight onto the payout choice.
+              Shortcut: Sam's wallet already holds £118.41 from three sales (Harbour City, Northgate, and a non-partner club), so you can try Move money and splits straight away.
             </p>
           </div>
 

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { LockerLogo, PoweredByKitLegit } from "../components/ui";
 import { useLocker } from "../lib/store";
+import { unreviewed } from "../lib/wallet";
 
 const TABS = [
   { to: "/app", label: "Home", icon: Home, end: true },
@@ -31,9 +32,7 @@ export function FanLayout() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { pathname } = useLocation();
   const s = useLocker();
-  const walletAlert = s.orders.some(
-    (o) => o.sellerId === s.meId && ((o.status === "completed" && !o.payout) || o.status === "paid"),
-  );
+  const walletAlert = unreviewed(s, s.meId).length > 0 || s.orders.some((o) => o.sellerId === s.meId && o.status === "paid");
 
   useEffect(() => {
     scrollRef.current?.scrollTo(0, 0);

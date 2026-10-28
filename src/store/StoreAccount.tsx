@@ -10,6 +10,8 @@ import { setStoreUser } from "../lib/actions";
 import { sendBy, shirtTitle } from "../lib/format";
 import { allInPrice, formatGBP } from "../lib/pricing";
 import { useLocker } from "../lib/store";
+import { AUTO_TRANSFER_DAYS, unreviewed, walletBalance, walletEntries } from "../lib/wallet";
+import { WalletEntryRow } from "../components/WalletEntryRow";
 import type { Listing, ListingStatus } from "../lib/types";
 import { useStore } from "./StoreLayout";
 
@@ -38,9 +40,11 @@ export function StoreAccount() {
   const listings = s.listings.filter((l) => l.sellerId === user.id && l.status !== "sold");
   const sales = s.orders.filter((o) => o.sellerId === user.id);
   const toSend = sales.filter((o) => o.status === "paid");
-  const ready = sales.filter((o) => o.status === "completed" && !o.payout);
+  const fresh = unreviewed(s, user.id);
+  const balance = walletBalance(s, user.id);
+  const held = walletEntries(s, user.id).filter((e) => e.reviewed && e.remaining > 0);
   const purchases = s.orders.filter((o) => o.buyerId === user.id);
-  const credits = s.credits.filter((c) => s.orders.find((o) => o.id === c.orderId)?.sellerId === user.id);
+  const credits = s.credits.filter((c) => c.userId === user.id);
   const favourite = getClub(user.clubId)!;
   const listingOf = (id: string) => s.listings.find((l) => l.id === id)!;
 
@@ -70,19 +74,12 @@ export function StoreAccount() {
         </button>
       </div>
 
-      {(ready.length > 0 || toSend.length > 0) && (
+      {(fresh.length > 0 || toSend.length > 0) && (
         <section>
           <SectionTitle>Needs you</SectionTitle>
           <div className="space-y-2">
-            {ready.map((o) => (
-              <Link key={o.id} to={`${base}/payout/${o.id}`} className="flex items-center gap-3 rounded-2xl border border-accent bg-accent/5 p-3">
-                <ShirtTile listing={listingOf(o.listingId)} compact className="w-14 shrink-0" />
-                <div className="flex-1 text-sm">
-                  <p className="font-semibold">Sold! {formatGBP(o.itemPrice)} is yours</p>
-                  <p className="text-xs text-accent">Choose how you're paid</p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-neutral-400" />
-              </Link>
+            {fresh.map((e) => (
+              <WalletEntryRow key={e.id} entry={e} to={`${base}/payout/${e.orderId}`} />
             ))}
             {toSend.map((o) => (
               <div key={o.id} className="flex items-center gap-4 rounded-2xl border border-neutral-200 p-3">
@@ -138,11 +135,28 @@ export function StoreAccount() {
 
       <section>
         <SectionTitle>Wallet</SectionTitle>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-2xl bg-neutral-50 p-4">
-            <p className="text-xs text-neutral-500">Locker balance</p>
-            <p className="text-2xl font-bold">{formatGBP(s.balances[user.id] ?? 0)}</p>
+        <div className="mb-3 flex flex-wrap items-center gap-4 rounded-2xl bg-neutral-50 p-4">
+          <div className="flex-1">
+            <p className="text-xs text-neutral-500">In your wallet</p>
+            <p className="text-3xl font-bold">{formatGBP(balance)}</p>
+            <p className="mt-1 text-xs text-neutral-500">
+              Spend it in The Locker or move it any time. Anything left moves to your bank automatically {AUTO_TRANSFER_DAYS} days after it arrives.
+            </p>
           </div>
+          {balance > 0 && (
+            <Link to={`${base}/wallet/move`} className="rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-on-accent">
+              Move money
+            </Link>
+          )}
+        </div>
+        {held.length > 0 && (
+          <div className="mb-3 space-y-2">
+            {held.map((e) => (
+              <WalletEntryRow key={e.id} entry={e} to={`${base}/payout/${e.orderId}`} />
+            ))}
+          </div>
+        )}
+        <div className="grid gap-3 sm:grid-cols-2">
           {credits.map((c) => {
             const cc = getClub(c.clubId)!;
             return (

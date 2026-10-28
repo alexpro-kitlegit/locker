@@ -5,6 +5,7 @@ import { placeOrder } from "../lib/actions";
 import { shirtTitle } from "../lib/format";
 import { buyerFee, CARRIERS, formatGBP } from "../lib/pricing";
 import { useLocker } from "../lib/store";
+import { walletBalance } from "../lib/wallet";
 import type { Carrier, Listing, Order, PaymentMethod } from "../lib/types";
 import { ShirtTile } from "./ListingCard";
 import { Button, CheckedBadge } from "./ui";
@@ -31,8 +32,7 @@ export function CheckoutForm({
   header?: ReactNode;
   onPlaced: (orderId: string) => void;
 }) {
-  const { balances } = useLocker();
-  const lockerBalance = balances[buyerId] ?? 0;
+  const lockerBalance = walletBalance(useLocker(), buyerId);
   const [carrier, setCarrier] = useState<Carrier>("inpost");
   const [payment, setPayment] = useState<PaymentMethod>("pay_by_bank");
   const [paying, setPaying] = useState(false);
@@ -57,7 +57,7 @@ export function CheckoutForm({
     { id: "apple_pay", label: "Apple Pay", detail: "Pay with Face ID", icon: <Apple className="h-4 w-4" /> },
     {
       id: "locker_balance",
-      label: "Locker balance",
+      label: "Your wallet",
       detail: `${formatGBP(lockerBalance)} available`,
       icon: <Wallet className="h-4 w-4" />,
       hidden: channel !== "app" || lockerBalance === 0,
